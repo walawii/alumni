@@ -12,15 +12,17 @@ import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import AlumniRegistrationForm from './components/AlumniRegistrationForm';
 import { MENU_ITEMS } from './constants';
-import type { Page } from './types';
+import type { Page, AdminSection } from './types';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('Beranda');
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  const [initialAdminSection, setInitialAdminSection] = useState<AdminSection>('Alumni');
 
   const handleLogin = (success: boolean) => {
     if (success) {
       setIsAdminLoggedIn(true);
+      setInitialAdminSection('Alumni');
       setActivePage('Admin Dashboard');
     }
   };
@@ -28,6 +30,11 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setActivePage('Beranda');
+  };
+  
+  const handleAdminNav = (section: AdminSection) => {
+    setInitialAdminSection(section);
+    setActivePage('Admin Dashboard');
   };
 
   const renderPage = () => {
@@ -58,7 +65,7 @@ const App: React.FC = () => {
        case 'Registrasi Alumni':
         return <AlumniRegistrationForm setActivePage={setActivePage}/>;
       case 'Admin Dashboard':
-        return isAdminLoggedIn ? <AdminDashboard /> : <AdminLogin onLogin={handleLogin} />;
+        return isAdminLoggedIn ? <AdminDashboard key={initialAdminSection} initialSection={initialAdminSection} /> : <AdminLogin onLogin={handleLogin} />;
       default:
         return <Hero setActivePage={setActivePage} />;
     }
@@ -80,6 +87,7 @@ const App: React.FC = () => {
         setActivePage={setActivePage}
         isAdminLoggedIn={isAdminLoggedIn}
         onLogout={handleLogout}
+        onAdminNav={handleAdminNav}
       />
       <main className="flex-grow relative z-10">
         {renderPage()}

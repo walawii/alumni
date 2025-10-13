@@ -1,430 +1,462 @@
+
 import React, { useState, useEffect } from 'react';
-import { getAlumni, addAlumni, updateAlumni, deleteAlumni } from '../services/alumniService';
+import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem } from '../types';
+
+// Import all services
+import { getAlumni, deleteAlumni } from '../services/alumniService';
 import { getNews, addNews, updateNews, deleteNews } from '../services/newsService';
 import { getGalleryImages, addGalleryImage, deleteGalleryImage } from '../services/galleryService';
-import type { Alumni, NewsArticle, GalleryImage } from '../types';
+import { getAboutInfo, updateAboutInfo } from '../services/aboutService';
+import { getDonationInfo, updateDonationInfo } from '../services/donationService';
+import { getSettings, updateSettings } from '../services/settingsService';
 
-type AdminSection = 'Alumni' | 'Berita' | 'Galeri';
+interface AdminDashboardProps {
+  initialSection: AdminSection;
+}
 
-// Alumni Management Component
-const AlumniManagement: React.FC = () => {
-  const [alumniList, setAlumniList] = useState<Alumni[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAlumni, setEditingAlumni] = useState<Alumni | null>(null);
-  
-  useEffect(() => {
-    loadAlumni();
-  }, []);
-
-  const loadAlumni = () => setAlumniList(getAlumni());
-
-  const handleOpenModal = (alumni: Alumni | null = null) => {
-    setEditingAlumni(alumni);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setEditingAlumni(null);
-    setIsModalOpen(false);
-  };
-
-  const handleSave = (alumniToSave: Alumni) => {
-    if (editingAlumni) {
-      updateAlumni(alumniToSave);
-    } else {
-      addAlumni({ ...alumniToSave, id: Date.now() });
-    }
-    loadAlumni();
-    handleCloseModal();
-  };
-
-  const handleDelete = (alumnusId: number) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus data alumni ini?')) {
-      deleteAlumni(alumnusId);
-      loadAlumni();
-    }
-  };
-
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Manajemen Alumni</h2>
-        <button onClick={() => handleOpenModal()} className="px-5 py-2 bg-brand-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-blue-700 transition-colors">
-          Tambah Alumni
-        </button>
-      </div>
-      <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Lulus</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pekerjaan</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kota</th>
-                <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {alumniList.map((alumnus) => (
-                <tr key={alumnus.id} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-4 whitespace-nowrap"><div className="flex items-center"><div className="flex-shrink-0 h-10 w-10"><img className="h-10 w-10 rounded-full" src={alumnus.avatarUrl} alt="" /></div><div className="ml-4"><div className="text-sm font-medium text-gray-900">{alumnus.name}</div></div></div></td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alumnus.graduationYear}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alumnus.occupation}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alumnus.city}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <button onClick={() => handleOpenModal(alumnus)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
-                    <button onClick={() => handleDelete(alumnus.id)} className="text-red-600 hover:text-red-900">Hapus</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {isModalOpen && <AlumniFormModal alumni={editingAlumni} onSave={handleSave} onClose={handleCloseModal} />}
-    </div>
-  );
-};
-
-const AlumniFormModal: React.FC<{ alumni: Alumni | null; onSave: (alumni: Alumni) => void; onClose: () => void }> = ({ alumni, onSave, onClose }) => {
-    const [formData, setFormData] = useState<Alumni>({
-        id: 0, name: '', graduationYear: new Date().getFullYear(), occupation: '', city: '', avatarUrl: '', 
-        phone: { number: '', showInDirectory: true },
-        bio: '',
-        socials: { linkedin: '', twitter: '', instagram: '' }
-    });
-
-    useEffect(() => {
-        setFormData(alumni || { 
-            id: Date.now(), name: '', graduationYear: new Date().getFullYear(), occupation: '', city: '', 
-            avatarUrl: `https://i.pravatar.cc/150?u=${Date.now()}`, 
-            phone: { number: '', showInDirectory: true },
-            bio: '',
-            socials: { linkedin: '', twitter: '', instagram: '' }
-        });
-    }, [alumni]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        
-        if (name === 'phoneNumber') {
-            setFormData(prev => ({ ...prev, phone: { ...prev.phone!, number: value } }));
-        } else if (name === 'showPhone' && e.target instanceof HTMLInputElement) {
-             setFormData(prev => ({ ...prev, phone: { ...prev.phone!, showInDirectory: e.target.checked } }));
-        } else if (['linkedin', 'twitter', 'instagram'].includes(name)) {
-            setFormData(prev => ({ ...prev, socials: { ...prev.socials, [name]: value } }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
+const FormField: React.FC<{label: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, type?: string, as?: 'textarea', rows?: number}> = ({label, name, value, onChange, type='text', as, rows}) => {
+    const commonProps = {
+        name,
+        id: name,
+        value,
+        onChange,
+        className: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500"
     };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const alumniToSave: Alumni = {
-            ...formData,
-            graduationYear: Number(formData.graduationYear),
-            bio: formData.bio?.trim() || undefined,
-            socials: {
-                linkedin: formData.socials?.linkedin?.trim() || undefined,
-                twitter: formData.socials?.twitter?.trim() || undefined,
-                instagram: formData.socials?.instagram?.trim() || undefined,
-            }
-        };
-        
-        if (alumniToSave.socials && Object.values(alumniToSave.socials).every(v => !v)) {
-           delete (alumniToSave as Partial<Alumni>).socials;
-        }
-
-        if (!alumniToSave.phone?.number?.trim()) {
-           delete (alumniToSave as Partial<Alumni>).phone;
-        }
-
-        onSave(alumniToSave);
-    };
-
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg my-8">
-                <form onSubmit={handleSubmit}>
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold mb-4">{alumni ? 'Edit Alumni' : 'Tambah Alumni'}</h2>
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                           <div>
-                                <label className="block text-sm font-medium text-gray-700">Nama</label>
-                                <input type="text" name="name" value={formData.name} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tahun Lulus</label>
-                                <input type="number" name="graduationYear" value={formData.graduationYear} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Pekerjaan</label>
-                                <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Kota</label>
-                                <input type="text" name="city" value={formData.city} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700">URL Avatar</label>
-                                <input type="text" name="avatarUrl" value={formData.avatarUrl} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Bio</label>
-                                <textarea name="bio" value={formData.bio || ''} onChange={handleChange} rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
-                                <input type="url" name="linkedin" value={formData.socials?.linkedin || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Twitter URL</label>
-                                <input type="url" name="twitter" value={formData.socials?.twitter || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Instagram URL</label>
-                                <input type="url" name="instagram" value={formData.socials?.instagram || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-                            </div>
-                             <div>
-                                <label className="block text-sm font-medium text-gray-700">No. Telepon (Opsional)</label>
-                                <input type="tel" name="phoneNumber" value={formData.phone?.number || ''} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-                            </div>
-                            <div className="flex items-center">
-                                <input id="showPhone-modal" type="checkbox" name="showPhone" checked={formData.phone?.showInDirectory || false} onChange={handleChange} className="h-4 w-4 text-brand-blue-600 border-gray-300 rounded focus:ring-brand-blue-500" />
-                                <label htmlFor="showPhone-modal" className="ml-2 block text-sm text-gray-900">Tampilkan di direktori</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
-                        <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-blue-700">Simpan</button>
-                    </div>
-                </form>
-            </div>
+        <div>
+            <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
+            {as === 'textarea' ? <textarea {...commonProps} rows={rows || 3}></textarea> : <input type={type} {...commonProps} />}
         </div>
-    );
-};
+    )
+}
 
-// News Management Component
-const NewsManagement: React.FC = () => {
-    const [articles, setArticles] = useState<NewsArticle[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
+const ManageAlumni: React.FC = () => {
+    const [alumni, setAlumni] = useState<Alumni[]>([]);
+    
+    useEffect(() => {
+        setAlumni(getAlumni());
+    }, []);
 
-    useEffect(() => { loadNews(); }, []);
-
-    const loadNews = () => setArticles(getNews());
-
-    const handleOpenModal = (article: NewsArticle | null = null) => {
-        setEditingArticle(article);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setEditingArticle(null);
-        setIsModalOpen(false);
-    };
-
-    const handleSave = (articleToSave: NewsArticle) => {
-        if (editingArticle) {
-            updateNews(articleToSave);
-        } else {
-            addNews({ ...articleToSave, id: Date.now() });
+    const handleDelete = (id: number) => {
+        if (window.confirm('Apakah Anda yakin ingin menghapus data alumni ini?')) {
+            deleteAlumni(id);
+            setAlumni(getAlumni()); // Refresh the list
         }
-        loadNews();
-        handleCloseModal();
-    };
-
-    const handleDelete = (articleId: number) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
-            deleteNews(articleId);
-            loadNews();
-        }
-    };
+    }
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Manajemen Berita</h2>
-                <button onClick={() => handleOpenModal()} className="px-5 py-2 bg-brand-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-blue-700 transition-colors">
-                    Tambah Berita
-                </button>
-            </div>
-             <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Judul</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                                <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Kelola Alumni</h2>
+            <p className="mb-6 text-gray-600">Total: {alumni.length} alumni terdaftar. Data alumni ditambahkan melalui form registrasi publik.</p>
+            <div className="overflow-x-auto bg-white rounded-lg shadow">
+                <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Lulus</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pekerjaan</th>
+                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {alumni.map(alum => (
+                            <tr key={alum.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{alum.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alum.graduationYear}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alum.occupation}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => alert('Fitur edit akan datang!')} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                    <button onClick={() => handleDelete(alum.id)} className="text-red-600 hover:text-red-900">Hapus</button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {articles.map((article) => (
-                                <tr key={article.id} className="hover:bg-gray-50/50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{article.title}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{article.date}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        <button onClick={() => handleOpenModal(article)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                        <button onClick={() => handleDelete(article.id)} className="text-red-600 hover:text-red-900">Hapus</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                        ))}
+                    </tbody>
+                </table>
             </div>
-            {isModalOpen && <NewsFormModal article={editingArticle} onSave={handleSave} onClose={handleCloseModal} />}
         </div>
     );
-};
+}
 
-const NewsFormModal: React.FC<{ article: NewsArticle | null; onSave: (article: NewsArticle) => void; onClose: () => void; }> = ({ article, onSave, onClose }) => {
-    const [formData, setFormData] = useState<NewsArticle>({ id: 0, title: '', date: '', excerpt: '', imageUrl: '' });
-
-    useEffect(() => {
-        setFormData(article || { id: Date.now(), title: '', date: new Date().toISOString().split('T')[0], excerpt: '', imageUrl: '' });
-    }, [article]);
-
+const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) => void, onCancel: () => void}> = ({article, onSave, onCancel}) => {
+    const [formData, setFormData] = useState(article);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setFormData({...formData, [e.target.name]: e.target.value});
     };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
+    }
+    return (
+        <form onSubmit={handleSubmit}>
+            <h2 className="text-2xl font-bold mb-4">{formData.id ? 'Edit' : 'Tambah'} Berita</h2>
+            <div className="space-y-4">
+                <FormField label="Judul" name="title" value={formData.title} onChange={handleChange} />
+                <FormField label="Kutipan" name="excerpt" value={formData.excerpt} onChange={handleChange} as="textarea" />
+                <FormField label="URL Gambar" name="imageUrl" value={formData.imageUrl} onChange={handleChange} />
+            </div>
+            <div className="mt-6 flex justify-end gap-4">
+                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
+                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan</button>
+            </div>
+        </form>
+    )
+}
+
+const ManageNews: React.FC = () => {
+    const [news, setNews] = useState<NewsArticle[]>([]);
+    const [isEditing, setIsEditing] = useState<NewsArticle | null>(null);
+
+    useEffect(() => {
+        setNews(getNews());
+    }, []);
+
+    const handleDelete = (id: number) => {
+        if (window.confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
+            deleteNews(id);
+            setNews(getNews());
+        }
+    }
+
+    const handleEdit = (article: NewsArticle) => {
+        setIsEditing(article);
     };
 
+    const handleCancelEdit = () => {
+        setIsEditing(null);
+    }
+    
+    const handleSave = (articleToSave: NewsArticle) => {
+        if (articleToSave.id) {
+            updateNews(articleToSave);
+        } else {
+            addNews({
+                title: articleToSave.title,
+                date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+                excerpt: articleToSave.excerpt,
+                imageUrl: articleToSave.imageUrl || `https://picsum.photos/seed/${Date.now()}/600/400`
+            });
+        }
+        setNews(getNews());
+        setIsEditing(null);
+    }
+
+    if (isEditing) {
+        return <NewsForm article={isEditing} onSave={handleSave} onCancel={handleCancelEdit} />
+    }
+
     return (
-         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
-                <form onSubmit={handleSubmit}>
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold mb-4">{article ? 'Edit Berita' : 'Tambah Berita'}</h2>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Judul</label>
-                                <input type="text" name="title" value={formData.title} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Tanggal</label>
-                                <input type="text" name="date" value={formData.date} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300" placeholder="Contoh: 1 Januari 2024" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Kutipan</label>
-                                <textarea name="excerpt" value={formData.excerpt} onChange={handleChange} rows={3} className="mt-1 block w-full rounded-md border-gray-300" required></textarea>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">URL Gambar</label>
-                                <input type="url" name="imageUrl" value={formData.imageUrl} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300" required />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-md">Batal</button>
-                        <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md">Simpan</button>
-                    </div>
-                </form>
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Kelola Berita</h2>
+                <button onClick={() => handleEdit({id: 0, title: '', date: '', excerpt: '', imageUrl: ''})} className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Berita</button>
+            </div>
+            <div className="overflow-x-auto bg-white rounded-lg shadow">
+                 <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {news.map(article => (
+                            <tr key={article.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{article.title}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{article.date}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => handleEdit(article)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                    <button onClick={() => handleDelete(article.id)} className="text-red-600 hover:text-red-900">Hapus</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
-    );
-};
+    )
+}
 
-
-// Gallery Management Component
-const GalleryManagement: React.FC = () => {
+const ManageGallery: React.FC = () => {
     const [images, setImages] = useState<GalleryImage[]>([]);
     const [newImageUrl, setNewImageUrl] = useState('');
 
-    useEffect(() => { loadImages(); }, []);
+    useEffect(() => {
+        setImages(getGalleryImages());
+    }, []);
 
-    const loadImages = () => setImages(getGalleryImages());
+    const handleDelete = (id: number) => {
+        if (window.confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
+            deleteGalleryImage(id);
+            setImages(getGalleryImages());
+        }
+    }
 
     const handleAddImage = (e: React.FormEvent) => {
         e.preventDefault();
         if (newImageUrl.trim()) {
             addGalleryImage(newImageUrl);
+            setImages(getGalleryImages());
             setNewImageUrl('');
-            loadImages();
         }
-    };
+    }
 
-    const handleDelete = (imageId: number) => {
-        if (window.confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
-            deleteGalleryImage(imageId);
-            loadImages();
-        }
-    };
-    
     return (
         <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Manajemen Galeri</h2>
-            <form onSubmit={handleAddImage} className="mb-8 p-6 bg-white/60 backdrop-blur-md rounded-lg shadow">
-                <label className="block text-sm font-medium text-gray-700">Tambah Gambar Baru (URL)</label>
-                <div className="mt-1 flex gap-2">
-                    <input type="url" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="https://example.com/image.jpg" className="flex-grow block w-full rounded-md border-gray-300" required />
-                    <button type="submit" className="px-5 py-2 bg-brand-blue-600 text-white font-semibold rounded-lg">Tambah</button>
-                </div>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Kelola Galeri</h2>
+            <form onSubmit={handleAddImage} className="mb-6 flex gap-4">
+                <input type="url" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="Masukkan URL gambar baru" className="flex-grow block w-full rounded-md border-gray-300 shadow-sm" required/>
+                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah</button>
             </form>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {images.map(image => (
                     <div key={image.id} className="relative group">
-                        <img src={image.url} className="w-full h-40 object-cover rounded-lg shadow" />
-                        <button onClick={() => handleDelete(image.id)} className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                        </button>
+                        <img src={image.url} alt={`Gallery image ${image.id}`} className="w-full h-40 object-cover rounded-lg shadow" />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg flex items-center justify-center">
+                            <button onClick={() => handleDelete(image.id)} className="text-white opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-red-600 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
         </div>
+    )
+}
+
+const ManageAbout: React.FC = () => {
+    const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null);
+
+    useEffect(() => {
+        setAboutInfo(getAboutInfo());
+    }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setAboutInfo(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
+    }
+    
+    const handleVisiMisiChange = (index: number, field: 'title' | 'description', value: string) => {
+        setAboutInfo(prev => {
+            if (!prev) return null;
+            const newVisiMisi = [...prev.visiMisi];
+            newVisiMisi[index] = {...newVisiMisi[index], [field]: value};
+            return {...prev, visiMisi: newVisiMisi};
+        })
+    }
+    
+    const handleAddVisiMisi = () => {
+        setAboutInfo(prev => {
+            if (!prev) return null;
+            const newItem: VisiMisiItem = { id: Date.now(), title: '', description: '' };
+            return { ...prev, visiMisi: [...prev.visiMisi, newItem] };
+        });
+    };
+    
+    const handleDeleteVisiMisi = (id: number) => {
+        setAboutInfo(prev => {
+            if (!prev) return null;
+            const newVisiMisi = prev.visiMisi.filter(item => item.id !== id);
+            return { ...prev, visiMisi: newVisiMisi };
+        });
+    };
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (aboutInfo) {
+            updateAboutInfo(aboutInfo);
+            alert('Informasi "Tentang Kami" berhasil diperbarui!');
+        }
+    }
+
+    if (!aboutInfo) return <div>Loading...</div>;
+
+    return (
+        <form onSubmit={handleSave}>
+             <h2 className="text-2xl font-bold mb-6 text-gray-800">Kelola Halaman "Tentang Kami"</h2>
+             <div className="space-y-6">
+                <FormField label="Judul Utama" name="title" value={aboutInfo.title} onChange={handleChange} />
+                <FormField label="Subjudul" name="subtitle" value={aboutInfo.subtitle} onChange={handleChange} as="textarea" />
+                <FormField label="Paragraf Pembuka" name="paragraph" value={aboutInfo.paragraph} onChange={handleChange} as="textarea" rows={4} />
+                <div>
+                    <div className="flex justify-between items-center mb-2">
+                         <h3 className="text-lg font-medium text-gray-900">Visi & Misi</h3>
+                         <button type="button" onClick={handleAddVisiMisi} className="text-sm font-semibold text-brand-blue-600 hover:text-brand-blue-800">Tambah Poin</button>
+                    </div>
+                   
+                    {aboutInfo.visiMisi.map((item, index) => (
+                        <div key={item.id} className="p-4 border rounded-md mb-4 space-y-2 bg-gray-50 relative">
+                            <FormField label={`Judul Poin ${index + 1}`} name={`visimisi-title-${index}`} value={item.title} onChange={e => handleVisiMisiChange(index, 'title', e.target.value)} />
+                            <FormField label={`Deskripsi Poin ${index + 1}`} name={`visimisi-desc-${index}`} value={item.description} as="textarea" onChange={e => handleVisiMisiChange(index, 'description', e.target.value)} />
+                            <button 
+                                type="button" 
+                                onClick={() => handleDeleteVisiMisi(item.id)}
+                                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-100"
+                                aria-label="Hapus poin"
+                            >
+                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                               </svg>
+                            </button>
+                        </div>
+                    ))}
+                </div>
+             </div>
+             <div className="mt-8 flex justify-end">
+                <button type="submit" className="px-6 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan Perubahan</button>
+             </div>
+        </form>
     );
 };
 
-// Main Dashboard Component
-const AdminDashboard: React.FC = () => {
-    const [activeSection, setActiveSection] = useState<AdminSection>('Alumni');
 
-    const renderSection = () => {
-        switch (activeSection) {
-            case 'Alumni': return <AlumniManagement />;
-            case 'Berita': return <NewsManagement />;
-            case 'Galeri': return <GalleryManagement />;
-            default: return null;
-        }
-    };
+const ManageDonations: React.FC = () => {
+    const [donationInfo, setDonationInfo] = useState<DonationInfo | null>(null);
+
+    useEffect(() => {
+        setDonationInfo(getDonationInfo());
+    }, []);
+
+    if (!donationInfo) return <div>Loading...</div>;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setDonationInfo(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
+    }
     
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (donationInfo) {
+            updateDonationInfo(donationInfo);
+            alert('Informasi Donasi berhasil diperbarui!');
+        }
+    }
+
     return (
-        <div className="py-12 bg-transparent">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Admin Dashboard</h1>
-                <p className="text-lg text-gray-600 mb-8">Pilih bagian yang ingin Anda kelola.</p>
-
-                <div className="border-b border-gray-200 mb-8">
-                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-                        {(['Alumni', 'Berita', 'Galeri'] as AdminSection[]).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveSection(tab)}
-                                className={`${
-                                    activeSection === tab
-                                        ? 'border-brand-blue-500 text-brand-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-
-                <div>
-                    {renderSection()}
-                </div>
-            </div>
-        </div>
+        <form onSubmit={handleSave}>
+             <h2 className="text-2xl font-bold mb-6 text-gray-800">Kelola Halaman Donasi</h2>
+             <div className="space-y-6">
+                <FormField label="Judul Utama" name="title" value={donationInfo.title} onChange={handleChange} />
+                <FormField label="Subjudul" name="subtitle" value={donationInfo.subtitle} onChange={handleChange} as="textarea" />
+                <FormField label="Paragraf Tambahan" name="mainParagraph" value={donationInfo.mainParagraph} onChange={handleChange} as="textarea" />
+                <h3 className="text-lg font-medium text-gray-900 pt-4">Informasi Rekening</h3>
+                <FormField label="Nama Bank" name="bankName" value={donationInfo.bankName} onChange={handleChange} />
+                <FormField label="Nomor Rekening" name="accountNumber" value={donationInfo.accountNumber} onChange={handleChange} />
+                <FormField label="Nama Pemilik Rekening" name="accountHolder" value={donationInfo.accountHolder} onChange={handleChange} />
+             </div>
+             <div className="mt-8 flex justify-end">
+                <button type="submit" className="px-6 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan Perubahan</button>
+             </div>
+        </form>
     );
+};
+
+
+const ManageSettings: React.FC = () => {
+    const [settings, setSettings] = useState<Settings | null>(null);
+
+    useEffect(() => {
+        setSettings(getSettings());
+    }, []);
+
+    if (!settings) return <div>Loading...</div>;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSettings(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
+    }
+    
+    const handleSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSettings(prev => prev ? {
+            ...prev, 
+            socials: { ...prev.socials, [e.target.name]: e.target.value }
+        } : null);
+    }
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (settings) {
+            updateSettings(settings);
+            alert('Pengaturan Umum berhasil diperbarui!');
+        }
+    }
+
+    return (
+        <form onSubmit={handleSave}>
+             <h2 className="text-2xl font-bold mb-6 text-gray-800">Pengaturan Umum Situs</h2>
+             <div className="space-y-6">
+                <FormField label="URL Logo" name="logoUrl" value={settings.logoUrl} onChange={handleChange} />
+                <FormField label="Alamat" name="address" value={settings.address} onChange={handleChange} />
+                <FormField label="Email Kontak" name="email" value={settings.email} onChange={handleChange} type="email" />
+                <FormField label="Telepon Kontak" name="phone" value={settings.phone} onChange={handleChange} type="tel" />
+                
+                <h3 className="text-lg font-medium text-gray-900 pt-4">Tautan Media Sosial</h3>
+                <FormField label="Twitter URL" name="twitter" value={settings.socials.twitter} onChange={handleSocialChange} />
+                <FormField label="Facebook URL" name="facebook" value={settings.socials.facebook} onChange={handleSocialChange} />
+                <FormField label="Instagram URL" name="instagram" value={settings.socials.instagram} onChange={handleSocialChange} />
+                <FormField label="LinkedIn URL" name="linkedin" value={settings.socials.linkedin} onChange={handleSocialChange} />
+             </div>
+             <div className="mt-8 flex justify-end">
+                <button type="submit" className="px-6 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan Perubahan</button>
+             </div>
+        </form>
+    );
+};
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
+  const [activeSection, setActiveSection] = useState<AdminSection>(initialSection);
+
+  useEffect(() => {
+    setActiveSection(initialSection);
+  }, [initialSection]);
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case 'Alumni':
+        return <ManageAlumni />;
+      case 'Berita':
+        return <ManageNews />;
+      case 'Galeri':
+        return <ManageGallery />;
+      case 'Tentang Kami':
+        return <ManageAbout />;
+      case 'Donasi':
+        return <ManageDonations />;
+      case 'Pengaturan Umum':
+        return <ManageSettings />;
+      default:
+        return <div>Pilih seksi untuk dikelola</div>;
+    }
+  };
+
+  const navItems: AdminSection[] = ['Alumni', 'Berita', 'Galeri', 'Tentang Kami', 'Donasi', 'Pengaturan Umum'];
+
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Admin Dashboard</h1>
+      <div className="flex flex-col md:flex-row gap-8">
+        <aside className="md:w-1/4 lg:w-1/5">
+          <nav className="flex flex-col space-y-2 sticky top-24">
+            {navItems.map((section) => (
+              <button
+                key={section}
+                onClick={() => setActiveSection(section)}
+                className={`w-full text-left px-4 py-3 rounded-md font-semibold transition-colors duration-200 ${
+                  activeSection === section
+                    ? 'bg-brand-blue-600 text-white shadow'
+                    : 'bg-white/80 text-gray-700 hover:bg-brand-blue-100 hover:text-brand-blue-700'
+                }`}
+              >
+                {section}
+              </button>
+            ))}
+          </nav>
+        </aside>
+        <main className="md:w-3/4 lg:w-4/5 bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-lg">
+          {renderSection()}
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboard;

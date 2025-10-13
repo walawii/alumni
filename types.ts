@@ -48,3 +48,47 @@ export interface Alumni {
     showInDirectory: boolean;
   };
 }
+
+export interface SocialLinks {
+  twitter: string;
+  facebook: string;
+  instagram: string;
+  linkedin: string;
+}
+
+export interface Settings {
+  logoUrl: string;
+  address: string;
+  email: string;
+  phone: string;
+  socials: SocialLinks;
+}
+
+export interface VisiMisiItem {
+  id: number;
+  title: string;
+  description: string;
+}
+
+export interface AboutInfo {
+  title: string;
+  subtitle: string;
+  paragraph: string;
+  visiMisi: VisiMisiItem[];
+}
+
+export interface DonationInfo {
+    title: string;
+    subtitle: string;
+    mainParagraph: string;
+    donationChannels: {
+        id: number;
+        title: string;
+        description: string;
+    }[];
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+}
+
+export type AdminSection = 'Alumni' | 'Berita' | 'Galeri' | 'Tentang Kami' | 'Donasi' | 'Pengaturan Umum';

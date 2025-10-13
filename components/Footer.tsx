@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { TwitterIcon, FacebookIcon, InstagramIcon, LinkedInIcon } from './Icons';
-import type { Page } from '../types';
-import { LOGO_URL } from '../constants';
+import type { Page, Settings } from '../types';
+import { getSettings } from '../services/settingsService';
+
 
 interface FooterProps {
   setActivePage: (page: Page) => void;
@@ -10,13 +11,25 @@ interface FooterProps {
 
 
 const Footer: React.FC<FooterProps> = ({ setActivePage, isAdminLoggedIn }) => {
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  useEffect(() => {
+    setSettings(getSettings());
+  }, []);
+
+  if (!settings) {
+    return null; // or a loading spinner
+  }
+  
+  const { logoUrl, address, email, socials } = settings;
+
   return (
     <footer className="bg-white/70 backdrop-blur-md border-t border-white/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
              <div className="flex items-center space-x-3 text-brand-blue-800 mb-4">
-                <img src={LOGO_URL} alt="Logo SMAN 7 Tasikmalaya" className="h-10 w-10" />
+                <img src={logoUrl} alt="Logo SMAN 7 Tasikmalaya" className="h-10 w-10" />
                 <span className="font-extrabold text-xl tracking-tight">
                   Ikatan Alumni SMAN 7 Tasikmalaya
                 </span>
@@ -35,8 +48,8 @@ const Footer: React.FC<FooterProps> = ({ setActivePage, isAdminLoggedIn }) => {
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Hubungi Kami</h3>
-            <p className="text-gray-600">Jl. Siliwangi No. 123, Tasikmalaya</p>
-            <p className="text-gray-600">Email: info@alumni-sman7tsm.id</p>
+            <p className="text-gray-600">{address}</p>
+            <p className="text-gray-600">Email: {email}</p>
           </div>
         </div>
         <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
@@ -49,10 +62,10 @@ const Footer: React.FC<FooterProps> = ({ setActivePage, isAdminLoggedIn }) => {
             )}
           </div>
           <div className="flex space-x-4 mt-4 sm:mt-0">
-            <a href="#" className="text-gray-500 hover:text-brand-blue-600"><TwitterIcon className="h-6 w-6" /></a>
-            <a href="#" className="text-gray-500 hover:text-brand-blue-600"><FacebookIcon className="h-6 w-6" /></a>
-            <a href="#" className="text-gray-500 hover:text-brand-blue-600"><InstagramIcon className="h-6 w-6" /></a>
-            <a href="#" className="text-gray-500 hover:text-brand-blue-600"><LinkedInIcon className="h-6 w-6" /></a>
+            <a href={socials.twitter} className="text-gray-500 hover:text-brand-blue-600"><TwitterIcon className="h-6 w-6" /></a>
+            <a href={socials.facebook} className="text-gray-500 hover:text-brand-blue-600"><FacebookIcon className="h-6 w-6" /></a>
+            <a href={socials.instagram} className="text-gray-500 hover:text-brand-blue-600"><InstagramIcon className="h-6 w-6" /></a>
+            <a href={socials.linkedin} className="text-gray-500 hover:text-brand-blue-600"><LinkedInIcon className="h-6 w-6" /></a>
           </div>
         </div>
       </div>

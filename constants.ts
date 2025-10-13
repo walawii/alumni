@@ -1,6 +1,7 @@
-import type { MenuItem, NewsArticle, Alumni, GalleryImage } from './types';
+import type { MenuItem, NewsArticle, Alumni, GalleryImage, Settings, AboutInfo, DonationInfo } from './types';
 
-export const LOGO_URL = "https://dindik.tasikmalayakota.go.id/wp-content/uploads/2022/10/Logo-SMA-Negeri-7-Tasikmalaya.png";
+// NOTE: LOGO_URL is now part of INITIAL_SETTINGS
+// export const LOGO_URL = "https://dindik.tasikmalayakota.go.id/wp-content/uploads/2022/10/Logo-SMA-Negeri-7-Tasikmalaya.png";
 
 export const MENU_ITEMS: MenuItem[] = [
   { name: 'Beranda', href: '#' },
@@ -11,6 +12,44 @@ export const MENU_ITEMS: MenuItem[] = [
   { name: 'Donasi', href: '#' },
   { name: 'Kontak', href: '#' },
 ];
+
+export const INITIAL_SETTINGS: Settings = {
+  logoUrl: "https://dindik.tasikmalayakota.go.id/wp-content/uploads/2022/10/Logo-SMA-Negeri-7-Tasikmalaya.png",
+  address: "Jl. Siliwangi No. 123, Tasikmalaya, Jawa Barat, 46151",
+  email: "info@alumni-sman7tsm.id",
+  phone: "(0265) 123-4567",
+  socials: {
+    twitter: "#",
+    facebook: "#",
+    instagram: "#",
+    linkedin: "#",
+  }
+};
+
+export const INITIAL_ABOUT_INFO: AboutInfo = {
+  title: "Ikatan Alumni SMAN 7 Tasikmalaya",
+  subtitle: "Sebuah wadah untuk menjalin kembali persahabatan, memperkuat jaringan, dan berkontribusi bagi kemajuan almamater.",
+  paragraph: "Ikatan Alumni SMAN 7 Tasikmalaya didirikan atas dasar semangat kekeluargaan dan keinginan untuk memberikan dampak positif. Kami bercita-cita menjadi komunitas alumni yang solid, inspiratif, dan bermanfaat bagi anggota, almamater, serta masyarakat luas.",
+  visiMisi: [
+    { id: 1, title: "Menjalin Silaturahmi", description: "Mempererat hubungan antar alumni dari berbagai angkatan melalui kegiatan-kegiatan positif." },
+    { id: 2, title: "Membangun Jaringan", description: "Menciptakan platform untuk berbagi informasi, peluang karir, dan kolaborasi profesional." },
+    { id: 3, title: "Berkontribusi untuk Almamater", description: "Mendukung program-program pengembangan sekolah dan membantu adik-adik kelas." }
+  ]
+};
+
+export const INITIAL_DONATION_INFO: DonationInfo = {
+    title: "Mari Berkontribusi untuk Almamater",
+    subtitle: "Dukungan Anda sangat berarti untuk pengembangan fasilitas sekolah, beasiswa bagi siswa berprestasi, dan keberlangsungan program-program alumni.",
+    mainParagraph: "Untuk informasi lebih lanjut mengenai program donasi, silakan hubungi kami.",
+    donationChannels: [
+        { id: 1, title: "Pengembangan Sekolah", description: "Bantu kami meningkatkan kualitas pendidikan dengan modernisasi fasilitas seperti laboratorium, perpustakaan, dan sarana olahraga." },
+        { id: 2, title: "Beasiswa & Bantuan", description: "Berikan kesempatan bagi siswa-siswi berprestasi dari keluarga kurang mampu untuk meraih cita-citanya tanpa kendala biaya." }
+    ],
+    bankName: "Bank XYZ",
+    accountNumber: "123-456-7890",
+    accountHolder: "a.n. Ikatan Alumni SMAN 7 Tasikmalaya"
+};
+
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {

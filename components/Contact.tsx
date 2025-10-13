@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getSettings } from '../services/settingsService';
+import type { Settings } from '../types';
 
 const Contact: React.FC = () => {
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  useEffect(() => {
+    setSettings(getSettings());
+  }, []);
+
+  if (!settings) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="bg-transparent py-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,7 +36,7 @@ const Contact: React.FC = () => {
                 </svg>
                 <div className="ml-4">
                   <h4 className="text-lg font-semibold text-gray-800">Alamat Sekretariat</h4>
-                  <p className="text-gray-600">Jl. Siliwangi No. 123, Tasikmalaya, Jawa Barat, 46151</p>
+                  <p className="text-gray-600">{settings.address}</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -33,7 +45,7 @@ const Contact: React.FC = () => {
                 </svg>
                 <div className="ml-4">
                   <h4 className="text-lg font-semibold text-gray-800">Email</h4>
-                  <p className="text-gray-600">info@alumni-sman7tsm.id</p>
+                  <p className="text-gray-600">{settings.email}</p>
                 </div>
               </div>
                <div className="flex items-start">
@@ -42,7 +54,7 @@ const Contact: React.FC = () => {
                 </svg>
                 <div className="ml-4">
                   <h4 className="text-lg font-semibold text-gray-800">Telepon</h4>
-                  <p className="text-gray-600">(0265) 123-4567</p>
+                  <p className="text-gray-600">{settings.phone}</p>
                 </div>
               </div>
             </div>

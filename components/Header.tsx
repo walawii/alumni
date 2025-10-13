@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import type { MenuItem, Page } from '../types';
+import React, { useState, useEffect } from 'react';
+import type { MenuItem, Page, AdminSection } from '../types';
 import { MenuIcon, XIcon } from './Icons';
-import { LOGO_URL } from '../constants';
+import { getSettings } from '../services/settingsService';
 
 interface HeaderProps {
   menuItems: MenuItem[];
@@ -9,15 +9,28 @@ interface HeaderProps {
   setActivePage: (page: Page) => void;
   isAdminLoggedIn: boolean;
   onLogout: () => void;
+  onAdminNav: (section: AdminSection) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, isAdminLoggedIn, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, isAdminLoggedIn, onLogout, onAdminNav }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('');
+
+  useEffect(() => {
+    setLogoUrl(getSettings().logoUrl);
+  }, [isAdminLoggedIn, activePage]);
+
 
   const handleNavClick = (page: Page) => {
     setActivePage(page);
     setIsMenuOpen(false);
   };
+
+  const GearIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" {...props}>
+      <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+    </svg>
+  );
 
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
@@ -30,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
         <div className="flex items-center justify-between h-20">
           <div className="flex-shrink-0">
             <a href="#" onClick={() => handleNavClick(isAdminLoggedIn ? 'Admin Dashboard' : 'Beranda')} className="flex items-center space-x-3 text-brand-blue-800">
-              <img src={LOGO_URL} alt="Logo SMAN 7 Tasikmalaya" className="h-12 w-12" />
+              <img src={logoUrl} alt="Logo SMAN 7 Tasikmalaya" className="h-12 w-12" />
               <span className="font-extrabold text-xl tracking-tight">
                 Alumni SMAN 7 TSM
               </span>
@@ -38,10 +51,10 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
           </div>
           {isAdminLoggedIn ? (
             <div className="flex items-center space-x-4">
-               <nav>
+               <nav className="flex items-center space-x-6">
                  <a
                     href="#"
-                    onClick={(e) => { e.preventDefault(); handleNavClick('Admin Dashboard'); }}
+                    onClick={(e) => { e.preventDefault(); onAdminNav('Alumni'); }}
                     className={`text-base font-semibold transition-colors duration-200 ${
                       activePage === 'Admin Dashboard'
                         ? 'text-brand-blue-600'
@@ -49,6 +62,15 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
                     }`}
                   >
                     Dashboard
+                  </a>
+                  <a
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); onAdminNav('Pengaturan Umum'); }}
+                    title="Pengaturan Situs"
+                    className="text-gray-600 hover:text-brand-blue-500 transition-colors duration-200 flex items-center gap-1"
+                  >
+                    <GearIcon />
+                    <span className="hidden sm:inline">Pengaturan Situs</span>
                   </a>
               </nav>
               <button
