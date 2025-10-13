@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { MenuItem, Page, AdminSection } from '../types';
+import type { MenuItem, Page, AdminSection, UserRole } from '../types';
 import { MenuIcon, XIcon, GearIcon } from './Icons';
 import { getSettings } from '../services/settingsService';
 
@@ -7,12 +7,12 @@ interface HeaderProps {
   menuItems: MenuItem[];
   activePage: Page;
   setActivePage: (page: Page) => void;
-  isAdminLoggedIn: boolean;
+  userRole: UserRole | null;
   onLogout: () => void;
   onAdminNav: (section: AdminSection) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, isAdminLoggedIn, onLogout, onAdminNav }) => {
+const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, userRole, onLogout, onAdminNav }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
 
@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
 
   useEffect(() => {
     setLogoUrl(getSettings().logoUrl);
-  }, [isAdminLoggedIn, activePage]);
+  }, [userRole, activePage]);
 
 
   const handleNavClick = (page: Page) => {
@@ -38,22 +38,22 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
 
   return (
     <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-      {isAdminLoggedIn && (
+      {userRole && (
         <div className="bg-yellow-400 text-center py-1 text-xs md:text-sm font-semibold text-yellow-900">
-          Anda sedang dalam Mode Admin
+          Anda sedang dalam Mode {userRole}
         </div>
       )}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <div className="flex-shrink-0">
-            <a href="#" onClick={() => handleNavClick(isAdminLoggedIn ? 'Admin Dashboard' : 'Beranda')} className="flex items-center space-x-2 md:space-x-3 text-brand-blue-800">
+            <a href="#" onClick={() => handleNavClick(userRole ? 'Admin Dashboard' : 'Beranda')} className="flex items-center space-x-2 md:space-x-3 text-brand-blue-800">
               <img src={logoUrl} alt="Logo SMAN 7 Tasikmalaya" className="h-10 w-10 md:h-12 md:w-12" />
               <span className="font-extrabold text-lg md:text-xl tracking-tight">
                 Alumni SMAN 7 TSM
               </span>
             </a>
           </div>
-          {isAdminLoggedIn ? (
+          {userRole ? (
             <div className="flex items-center space-x-2 md:space-x-4">
                <nav className="flex items-center space-x-2 md:space-x-6">
                  <a
@@ -67,15 +67,17 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
                   >
                     Dashboard
                   </a>
-                  <a
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); onAdminNav('Pengaturan Umum'); }}
-                    title="Pengaturan Situs"
-                    className="text-gray-600 hover:text-brand-blue-500 transition-colors duration-200 flex items-center gap-1"
-                  >
-                    <GearIcon className="h-5 w-5"/>
-                    <span className="hidden sm:inline text-sm md:text-base">Pengaturan</span>
-                  </a>
+                  {userRole === 'Admin' && (
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); onAdminNav('Pengaturan Umum'); }}
+                      title="Pengaturan Situs"
+                      className="text-gray-600 hover:text-brand-blue-500 transition-colors duration-200 flex items-center gap-1"
+                    >
+                      <GearIcon className="h-5 w-5"/>
+                      <span className="hidden sm:inline text-sm md:text-base">Pengaturan</span>
+                    </a>
+                  )}
               </nav>
               <button
                 onClick={onLogout}
@@ -115,7 +117,7 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, i
           )}
         </div>
       </div>
-      {isMenuOpen && !isAdminLoggedIn && (
+      {isMenuOpen && !userRole && (
         <div className="md:hidden absolute w-full bg-white/95 backdrop-blur-md shadow-lg">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {menuItems.map((item) => (

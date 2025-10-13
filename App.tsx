@@ -12,23 +12,27 @@ import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import AlumniRegistrationForm from './components/AlumniRegistrationForm';
 import { MENU_ITEMS } from './constants';
-import type { Page, AdminSection } from './types';
+import type { Page, AdminSection, UserRole } from './types';
 
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('Beranda');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [initialAdminSection, setInitialAdminSection] = useState<AdminSection>('Alumni');
 
-  const handleLogin = (success: boolean) => {
-    if (success) {
-      setIsAdminLoggedIn(true);
-      setInitialAdminSection('Alumni');
+  const handleLogin = (role: UserRole | null, loggedInUsername?: string) => {
+    if (role && loggedInUsername) {
+      setUserRole(role);
+      setUsername(loggedInUsername);
+      // Content manager should see a relevant section first
+      setInitialAdminSection(role === 'Admin' ? 'Alumni' : 'Berita');
       setActivePage('Admin Dashboard');
     }
   };
 
   const handleLogout = () => {
-    setIsAdminLoggedIn(false);
+    setUserRole(null);
+    setUsername(null);
     setActivePage('Beranda');
   };
   
@@ -43,19 +47,19 @@ const App: React.FC = () => {
         return (
           <>
             <Hero setActivePage={setActivePage} />
-            <About isAdminLoggedIn={isAdminLoggedIn} />
+            <About userRole={userRole} />
             <News />
             <Gallery />
           </>
         );
       case 'Tentang Kami':
-        return <About isAdminLoggedIn={isAdminLoggedIn} />;
+        return <About userRole={userRole} />;
       case 'Berita Alumni':
         return <News />;
       case 'Galeri':
         return <Gallery />;
       case 'Direktori Alumni':
-        return <Directory isAdminLoggedIn={isAdminLoggedIn} setActivePage={setActivePage} />;
+        return <Directory userRole={userRole} setActivePage={setActivePage} />;
       case 'Donasi':
         return <Donate />;
       case 'Kontak':
@@ -65,7 +69,7 @@ const App: React.FC = () => {
        case 'Registrasi Alumni':
         return <AlumniRegistrationForm setActivePage={setActivePage}/>;
       case 'Admin Dashboard':
-        return isAdminLoggedIn ? <AdminDashboard key={initialAdminSection} initialSection={initialAdminSection} /> : <AdminLogin onLogin={handleLogin} />;
+        return userRole && username ? <AdminDashboard key={initialAdminSection} initialSection={initialAdminSection} userRole={userRole} username={username} /> : <AdminLogin onLogin={handleLogin} />;
       default:
         return <Hero setActivePage={setActivePage} />;
     }
@@ -85,7 +89,7 @@ const App: React.FC = () => {
         menuItems={MENU_ITEMS}
         activePage={activePage}
         setActivePage={setActivePage}
-        isAdminLoggedIn={isAdminLoggedIn}
+        userRole={userRole}
         onLogout={handleLogout}
         onAdminNav={handleAdminNav}
       />
@@ -94,7 +98,7 @@ const App: React.FC = () => {
       </main>
       <Footer 
         setActivePage={setActivePage} 
-        isAdminLoggedIn={isAdminLoggedIn} 
+        userRole={userRole} 
       />
     </div>
   );

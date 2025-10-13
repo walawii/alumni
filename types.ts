@@ -11,6 +11,15 @@ export type Page =
   | 'Admin Login'
   | 'Registrasi Alumni'
   | 'Admin Dashboard';
+  
+export type UserRole = 'Admin' | 'Content Manager';
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  password: string; // In a real app, this would be a hash
+  role: UserRole;
+}
 
 export interface MenuItem {
   name: Page;
@@ -91,4 +100,4 @@ export interface DonationInfo {
     accountHolder: string;
 }
 
-export type AdminSection = 'Alumni' | 'Berita' | 'Galeri' | 'Tentang Kami' | 'Donasi' | 'Pengaturan Umum';
+export type AdminSection = 'Alumni' | 'Berita' | 'Galeri' | 'Tentang Kami' | 'Donasi' | 'Pengaturan Umum' | 'Kelola Admin';

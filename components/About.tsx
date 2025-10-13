@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import type { AboutInfo } from '../types';
+import type { AboutInfo, UserRole } from '../types';
 import { getAboutInfo } from '../services/aboutService';
 
 interface AboutProps {
-  isAdminLoggedIn: boolean;
+  userRole: UserRole | null;
 }
 
-const About: React.FC<AboutProps> = ({ isAdminLoggedIn }) => {
+const About: React.FC<AboutProps> = ({ userRole }) => {
   const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null);
 
   useEffect(() => {

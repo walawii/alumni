@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem } from '../types';
-import { MenuIcon, XIcon, UsersIcon, NewspaperIcon, PhotographIcon, DocumentTextIcon, CogIcon, GiftIcon } from './Icons';
+import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem, UserRole, AdminUser } from '../types';
+import { MenuIcon, XIcon, UsersIcon, NewspaperIcon, PhotographIcon, DocumentTextIcon, CogIcon, GiftIcon, UserGroupIcon, SparklesIcon } from './Icons';
+import { generateNewsStory } from '../services/geminiService';
 
 
 // Import all services
@@ -10,18 +11,23 @@ import { getGalleryImages, addGalleryImage, deleteGalleryImage } from '../servic
 import { getAboutInfo, updateAboutInfo } from '../services/aboutService';
 import { getDonationInfo, updateDonationInfo } from '../services/donationService';
 import { getSettings, updateSettings } from '../services/settingsService';
+import { getAdminUsers, addAdminUser, updateAdminUser, deleteAdminUser } from '../services/adminUserService';
 
 interface AdminDashboardProps {
   initialSection: AdminSection;
+  userRole: UserRole;
+  username: string;
 }
 
-const FormField: React.FC<{label: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, type?: string, as?: 'textarea', rows?: number}> = ({label, name, value, onChange, type='text', as, rows}) => {
+const FormField: React.FC<{label: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, type?: string, as?: 'textarea', rows?: number, required?: boolean, disabled?: boolean}> = ({label, name, value, onChange, type='text', as, rows, required, disabled}) => {
     const commonProps = {
         name,
         id: name,
         value,
         onChange,
-        className: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500 text-sm md:text-base"
+        required,
+        disabled,
+        className: `mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500 text-sm md:text-base ${disabled ? 'bg-gray-100' : ''}`
     };
     return (
         <div>
@@ -80,9 +86,42 @@ const ManageAlumni: React.FC = () => {
 
 const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) => void, onCancel: () => void}> = ({article, onSave, onCancel}) => {
     const [formData, setFormData] = useState(article);
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiImageFile, setAiImageFile] = useState<File | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiError, setAiError] = useState('');
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({...formData, [e.target.name]: e.target.value});
     };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setAiImageFile(e.target.files[0]);
+        }
+    };
+
+    const handleGenerateStory = async () => {
+        if (!aiImageFile || !aiPrompt.trim()) {
+            setAiError('Silakan unggah gambar dan berikan deskripsi/kata kunci.');
+            return;
+        }
+        setAiError('');
+        setIsGenerating(true);
+        try {
+            const result = await generateNewsStory(aiPrompt, aiImageFile);
+            setFormData(prev => ({
+                ...prev,
+                title: result.title,
+                excerpt: result.excerpt,
+            }));
+        } catch (error: any) {
+            setAiError(error.message || 'Terjadi kesalahan saat membuat cerita.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
@@ -90,10 +129,73 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
     return (
         <form onSubmit={handleSubmit}>
             <h2 className="text-2xl font-bold mb-4">{formData.id ? 'Edit' : 'Tambah'} Berita</h2>
+            
+            {/* AI Generator Section */}
+            <div className="p-4 border-2 border-dashed rounded-lg mb-6 bg-brand-blue-50/50 border-brand-blue-200">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <SparklesIcon className="h-5 w-5 text-brand-blue-500" />
+                    Generator Berita AI
+                </h3>
+                <p className="text-sm text-gray-600 mt-1 mb-4">Buat draf berita secara otomatis berdasarkan gambar dan deskripsi singkat.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <div>
+                        <label htmlFor="ai-image" className="block text-sm font-medium text-gray-700">1. Unggah Gambar</label>
+                        <input 
+                            type="file" 
+                            id="ai-image" 
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-blue-100 file:text-brand-blue-700 hover:file:bg-brand-blue-200"
+                        />
+                    </div>
+                    {aiImageFile && <img src={URL.createObjectURL(aiImageFile)} alt="Preview" className="h-20 w-20 object-cover rounded-md" />}
+                </div>
+
+                <div className="mt-4">
+                    <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-700">2. Beri Deskripsi / Kata Kunci</label>
+                    <textarea
+                        id="ai-prompt"
+                        rows={2}
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="Contoh: alumni angkatan 2015 sedang mengadakan bakti sosial di desa terpencil"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                    />
+                </div>
+
+                <div className="mt-4">
+                    <button
+                        type="button"
+                        onClick={handleGenerateStory}
+                        disabled={isGenerating || !aiImageFile || !aiPrompt.trim()}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {isGenerating ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Membuat...
+                            </>
+                        ) : (
+                            <>
+                                <SparklesIcon className="h-5 w-5" />
+                                Buat Cerita
+                            </>
+                        )}
+                    </button>
+                    {aiError && <p className="text-red-600 text-sm mt-2">{aiError}</p>}
+                </div>
+            </div>
+            {/* End AI Generator Section */}
+
+
             <div className="space-y-4">
-                <FormField label="Judul" name="title" value={formData.title} onChange={handleChange} />
-                <FormField label="Kutipan" name="excerpt" value={formData.excerpt} onChange={handleChange} as="textarea" />
-                <FormField label="URL Gambar" name="imageUrl" value={formData.imageUrl} onChange={handleChange} />
+                <FormField label="Judul" name="title" value={formData.title} onChange={handleChange} required/>
+                <FormField label="Kutipan" name="excerpt" value={formData.excerpt} onChange={handleChange} as="textarea" required/>
+                <FormField label="URL Gambar" name="imageUrl" value={formData.imageUrl} onChange={handleChange} required/>
             </div>
             <div className="mt-6 flex justify-end gap-4">
                 <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
@@ -277,9 +379,9 @@ const ManageAbout: React.FC = () => {
         <form onSubmit={handleSave}>
              <h2 className="text-2xl font-bold mb-6 text-gray-800">Kelola Halaman "Tentang Kami"</h2>
              <div className="space-y-6">
-                <FormField label="Judul Utama" name="title" value={aboutInfo.title} onChange={handleChange} />
-                <FormField label="Subjudul" name="subtitle" value={aboutInfo.subtitle} onChange={handleChange} as="textarea" />
-                <FormField label="Paragraf Pembuka" name="paragraph" value={aboutInfo.paragraph} onChange={handleChange} as="textarea" rows={4} />
+                <FormField label="Judul Utama" name="title" value={aboutInfo.title} onChange={handleChange} required/>
+                <FormField label="Subjudul" name="subtitle" value={aboutInfo.subtitle} onChange={handleChange} as="textarea" required/>
+                <FormField label="Paragraf Pembuka" name="paragraph" value={aboutInfo.paragraph} onChange={handleChange} as="textarea" rows={4} required/>
                 <div>
                     <div className="flex justify-between items-center mb-2">
                          <h3 className="text-lg font-medium text-gray-900">Visi & Misi</h3>
@@ -288,8 +390,8 @@ const ManageAbout: React.FC = () => {
                    
                     {aboutInfo.visiMisi.map((item, index) => (
                         <div key={item.id} className="p-4 border rounded-md mb-4 space-y-2 bg-gray-50 relative">
-                            <FormField label={`Judul Poin ${index + 1}`} name={`visimisi-title-${index}`} value={item.title} onChange={e => handleVisiMisiChange(index, 'title', e.target.value)} />
-                            <FormField label={`Deskripsi Poin ${index + 1}`} name={`visimisi-desc-${index}`} value={item.description} as="textarea" onChange={e => handleVisiMisiChange(index, 'description', e.target.value)} />
+                            <FormField label={`Judul Poin ${index + 1}`} name={`visimisi-title-${index}`} value={item.title} onChange={e => handleVisiMisiChange(index, 'title', e.target.value)} required/>
+                            <FormField label={`Deskripsi Poin ${index + 1}`} name={`visimisi-desc-${index}`} value={item.description} as="textarea" onChange={e => handleVisiMisiChange(index, 'description', e.target.value)} required/>
                             <button 
                                 type="button" 
                                 onClick={() => handleDeleteVisiMisi(item.id)}
@@ -337,13 +439,13 @@ const ManageDonations: React.FC = () => {
         <form onSubmit={handleSave}>
              <h2 className="text-2xl font-bold mb-6 text-gray-800">Kelola Halaman Donasi</h2>
              <div className="space-y-6">
-                <FormField label="Judul Utama" name="title" value={donationInfo.title} onChange={handleChange} />
-                <FormField label="Subjudul" name="subtitle" value={donationInfo.subtitle} onChange={handleChange} as="textarea" />
+                <FormField label="Judul Utama" name="title" value={donationInfo.title} onChange={handleChange} required/>
+                <FormField label="Subjudul" name="subtitle" value={donationInfo.subtitle} onChange={handleChange} as="textarea" required/>
                 <FormField label="Paragraf Tambahan" name="mainParagraph" value={donationInfo.mainParagraph} onChange={handleChange} as="textarea" />
                 <h3 className="text-lg font-medium text-gray-900 pt-4">Informasi Rekening</h3>
-                <FormField label="Nama Bank" name="bankName" value={donationInfo.bankName} onChange={handleChange} />
-                <FormField label="Nomor Rekening" name="accountNumber" value={donationInfo.accountNumber} onChange={handleChange} />
-                <FormField label="Nama Pemilik Rekening" name="accountHolder" value={donationInfo.accountHolder} onChange={handleChange} />
+                <FormField label="Nama Bank" name="bankName" value={donationInfo.bankName} onChange={handleChange} required/>
+                <FormField label="Nomor Rekening" name="accountNumber" value={donationInfo.accountNumber} onChange={handleChange} required/>
+                <FormField label="Nama Pemilik Rekening" name="accountHolder" value={donationInfo.accountHolder} onChange={handleChange} required/>
              </div>
              <div className="mt-8 flex justify-end">
                 <button type="submit" className="px-6 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan Perubahan</button>
@@ -385,10 +487,10 @@ const ManageSettings: React.FC = () => {
         <form onSubmit={handleSave}>
              <h2 className="text-2xl font-bold mb-6 text-gray-800">Pengaturan Umum Situs</h2>
              <div className="space-y-6">
-                <FormField label="URL Logo" name="logoUrl" value={settings.logoUrl} onChange={handleChange} />
-                <FormField label="Alamat" name="address" value={settings.address} onChange={handleChange} />
-                <FormField label="Email Kontak" name="email" value={settings.email} onChange={handleChange} type="email" />
-                <FormField label="Telepon Kontak" name="phone" value={settings.phone} onChange={handleChange} type="tel" />
+                <FormField label="URL Logo" name="logoUrl" value={settings.logoUrl} onChange={handleChange} required/>
+                <FormField label="Alamat" name="address" value={settings.address} onChange={handleChange} required/>
+                <FormField label="Email Kontak" name="email" value={settings.email} onChange={handleChange} type="email" required/>
+                <FormField label="Telepon Kontak" name="phone" value={settings.phone} onChange={handleChange} type="tel" required/>
                 
                 <h3 className="text-lg font-medium text-gray-900 pt-4">Tautan Media Sosial</h3>
                 <FormField label="Twitter URL" name="twitter" value={settings.socials.twitter} onChange={handleSocialChange} />
@@ -403,13 +505,151 @@ const ManageSettings: React.FC = () => {
     );
 };
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
-  const [activeSection, setActiveSection] = useState<AdminSection>(initialSection);
+const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => void, onCancel: () => void, onError: (msg: string) => void}> = ({user, onSave, onCancel, onError}) => {
+    const [formData, setFormData] = useState({...user, password: ''}); // Clear password for editing
+    const isEditing = !!user.id;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData({...formData, [e.target.name]: e.target.value});
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!isEditing && !formData.password) {
+            onError("Password wajib diisi untuk admin baru.");
+            return;
+        }
+        
+        let userToSave = { ...formData, password: formData.password || user.password };
+
+        if(isEditing) {
+            onSave(userToSave)
+        } else {
+             const result = addAdminUser(userToSave);
+             if (result.success) {
+                onSave(userToSave);
+             } else {
+                onError(result.message || 'Gagal menyimpan admin.');
+             }
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <h2 className="text-2xl font-bold mb-4">{isEditing ? 'Edit' : 'Tambah'} Admin</h2>
+            <div className="space-y-4">
+                <FormField label="Username" name="username" value={formData.username} onChange={handleChange} required disabled={isEditing} />
+                <FormField label="Password" name="password" value={formData.password} onChange={handleChange} type="password" required={!isEditing} />
+                {isEditing && <p className="text-xs text-gray-500 -mt-2">Kosongkan password jika tidak ingin mengubahnya.</p>}
+                <div>
+                     <label htmlFor="role" className="block text-sm font-medium text-gray-700">Role</label>
+                     <select id="role" name="role" value={formData.role} onChange={handleChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500">
+                         <option value="Admin">Admin</option>
+                         <option value="Content Manager">Content Manager</option>
+                     </select>
+                </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-4">
+                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
+                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan</button>
+            </div>
+        </form>
+    )
+}
+
+const ManageAdmins: React.FC<{currentUser: string}> = ({currentUser}) => {
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [isEditing, setIsEditing] = useState<AdminUser | null>(null);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        setUsers(getAdminUsers());
+    }, []);
+    
+    const handleEdit = (user: AdminUser) => {
+        setError('');
+        setIsEditing(user);
+    }
+
+    const handleDelete = (user: AdminUser) => {
+        if(user.username === currentUser) {
+            alert('Anda tidak dapat menghapus akun Anda sendiri.');
+            return;
+        }
+
+        if (window.confirm(`Apakah Anda yakin ingin menghapus user ${user.username}?`)) {
+            const result = deleteAdminUser(user.id);
+            if(result.success) {
+                setUsers(getAdminUsers());
+            } else {
+                alert(result.message);
+            }
+        }
+    }
+    
+    const handleSave = (userToSave: AdminUser) => {
+        if (userToSave.id) {
+            updateAdminUser(userToSave);
+        }
+        setUsers(getAdminUsers());
+        setIsEditing(null);
+    }
+
+    if(isEditing) {
+        return <AdminUserForm user={isEditing} onSave={handleSave} onCancel={() => setIsEditing(null)} onError={setError} />
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Kelola Admin</h2>
+                <button onClick={() => handleEdit({id: 0, username: '', password: '', role: 'Content Manager'})} className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Admin</button>
+            </div>
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+             <div className="overflow-x-auto bg-white rounded-lg shadow">
+                 <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Role</th>
+                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {users.map(user => (
+                            <tr key={user.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username} {user.username === currentUser && '(Anda)'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{user.role}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button onClick={() => handleEdit(user)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                    <button onClick={() => handleDelete(user)} className="text-red-600 hover:text-red-900" disabled={user.username === currentUser}>Hapus</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    )
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection, userRole, username }) => {
+  const availableSections: AdminSection[] = userRole === 'Admin' 
+    ? ['Alumni', 'Berita', 'Galeri', 'Tentang Kami', 'Donasi', 'Pengaturan Umum', 'Kelola Admin']
+    : ['Berita', 'Galeri'];
+  
+  const [activeSection, setActiveSection] = useState<AdminSection>(
+    availableSections.includes(initialSection) ? initialSection : availableSections[0]
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    setActiveSection(initialSection);
-  }, [initialSection]);
+    if (availableSections.includes(initialSection)) {
+        setActiveSection(initialSection);
+    } else {
+        setActiveSection(availableSections[0]);
+    }
+  }, [initialSection, userRole]);
 
   const handleNavClick = (section: AdminSection) => {
     setActiveSection(section);
@@ -430,6 +670,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
         return <ManageDonations />;
       case 'Pengaturan Umum':
         return <ManageSettings />;
+      case 'Kelola Admin':
+        return <ManageAdmins currentUser={username}/>
       default:
         return <div>Pilih seksi untuk dikelola</div>;
     }
@@ -441,12 +683,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
     { section: 'Galeri', icon: PhotographIcon },
     { section: 'Tentang Kami', icon: DocumentTextIcon },
     { section: 'Donasi', icon: GiftIcon },
+    { section: 'Kelola Admin', icon: UserGroupIcon },
     { section: 'Pengaturan Umum', icon: CogIcon },
   ];
 
+  const filteredNavItems = navItems.filter(item => availableSections.includes(item.section));
+
   const SideBarContent = () => (
     <nav className="flex flex-col space-y-2 p-4">
-        {navItems.map(({section, icon: Icon}) => (
+        {filteredNavItems.map(({section, icon: Icon}) => (
           <button
             key={section}
             onClick={() => handleNavClick(section)}

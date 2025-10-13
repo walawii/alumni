@@ -1,19 +1,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { getAlumni } from '../services/alumniService';
-import type { Alumni, Page } from '../types';
+import type { Alumni, Page, UserRole } from '../types';
 import { SearchIcon, LinkedInIcon, TwitterIcon, InstagramIcon } from './Icons';
 
 interface DirectoryProps {
-  isAdminLoggedIn: boolean;
+  userRole: UserRole | null;
   setActivePage: (page: Page) => void;
 }
 
-const AlumniCard: React.FC<{ alumni: Alumni; isAdminLoggedIn: boolean; onClick: () => void }> = ({ alumni, isAdminLoggedIn, onClick }) => (
+const AlumniCard: React.FC<{ alumni: Alumni; userRole: UserRole | null; onClick: () => void }> = ({ alumni, userRole, onClick }) => (
     <div
         onClick={onClick}
         className="bg-white/80 backdrop-blur-md rounded-lg shadow-md p-6 text-center hover:shadow-xl transition-all duration-300 group relative cursor-pointer hover:-translate-y-1"
     >
-     {isAdminLoggedIn && (
+     {userRole === 'Admin' && (
         <button 
           onClick={(e) => { e.stopPropagation(); /* Future edit logic */ }} 
           className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -95,7 +95,7 @@ const AlumniDetail: React.FC<{ alumni: Alumni; onClose: () => void }> = ({ alumn
     </div>
 );
 
-const Directory: React.FC<DirectoryProps> = ({ isAdminLoggedIn, setActivePage }) => {
+const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
   const [allAlumni, setAllAlumni] = useState<Alumni[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterYear, setFilterYear] = useState<string>('');
@@ -178,7 +178,7 @@ const Directory: React.FC<DirectoryProps> = ({ isAdminLoggedIn, setActivePage })
               <AlumniCard 
                 key={alumni.id} 
                 alumni={alumni} 
-                isAdminLoggedIn={isAdminLoggedIn} 
+                userRole={userRole} 
                 onClick={() => handleViewProfile(alumni)}
               />
             ))}

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import type { UserRole } from '../types';
+import { authenticateUser } from '../services/adminUserService';
 
 interface AdminLoginProps {
-  onLogin: (success: boolean) => void;
+  onLogin: (role: UserRole | null, username?: string) => void;
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
@@ -11,14 +13,14 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // IMPORTANT: This is a mock login for demonstration purposes.
-    // In a real application, use a secure authentication service.
-    if (username === 'admin' && password === 'password') {
+    const user = authenticateUser(username, password);
+
+    if (user) {
       setError('');
-      onLogin(true);
+      onLogin(user.role, user.username);
     } else {
       setError('Username atau password salah.');
-      onLogin(false);
+      onLogin(null);
     }
   };
 
@@ -31,6 +33,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Silakan masuk untuk mengelola konten website.
+            <br />
+            <span className="font-mono text-xs">(Hint: admin/password atau content/password)</span>
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

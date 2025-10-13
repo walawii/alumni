@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { TwitterIcon, FacebookIcon, InstagramIcon, LinkedInIcon } from './Icons';
-import type { Page, Settings } from '../types';
+import type { Page, Settings, UserRole } from '../types';
 import { getSettings } from '../services/settingsService';
 
 
 interface FooterProps {
   setActivePage: (page: Page) => void;
-  isAdminLoggedIn: boolean;
+  userRole: UserRole | null;
 }
 
 
-const Footer: React.FC<FooterProps> = ({ setActivePage, isAdminLoggedIn }) => {
+const Footer: React.FC<FooterProps> = ({ setActivePage, userRole }) => {
   const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
@@ -55,8 +55,8 @@ const Footer: React.FC<FooterProps> = ({ setActivePage, isAdminLoggedIn }) => {
         <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center">
           <div className="text-gray-500 text-sm">
             <p>&copy; {new Date().getFullYear()} Ikatan Alumni SMAN 7 Tasikmalaya. All rights reserved.</p>
-            {isAdminLoggedIn ? (
-              <p className="text-xs font-bold text-green-700 mt-1">Status: Admin Mode Aktif</p>
+            {userRole ? (
+              <p className="text-xs font-bold text-green-700 mt-1">Status: Mode {userRole} Aktif</p>
             ) : (
               <a href="#" onClick={(e) => { e.preventDefault(); setActivePage('Admin Login'); }} className="text-xs hover:text-brand-blue-600">Admin Login</a>
             )}
