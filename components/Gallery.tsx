@@ -10,7 +10,7 @@ const Gallery: React.FC = () => {
   }, []);
 
   return (
-    <div className="py-16 bg-transparent">
+    <div className="py-12 md:py-16 bg-transparent">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-base text-brand-blue-600 font-semibold tracking-wide uppercase">Galeri Kenangan</h2>
@@ -21,13 +21,13 @@ const Gallery: React.FC = () => {
             Jelajahi kembali momen-momen indah selama di SMAN 7 Tasikmalaya dan di berbagai acara alumni.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
           {images.map((image) => (
             <div key={image.id} className="group relative">
               <img
                 src={image.url}
                 alt={`Gallery image ${image.id}`}
-                className="w-full h-64 object-cover rounded-lg shadow-md transition-transform duration-300 transform group-hover:scale-105"
+                className="w-full h-40 md:h-64 object-cover rounded-lg shadow-md transition-transform duration-300 transform group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity duration-300 rounded-lg"></div>
             </div>

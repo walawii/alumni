@@ -29,7 +29,7 @@ const AlumniCard: React.FC<{ alumni: Alumni; isAdminLoggedIn: boolean; onClick: 
 );
 
 const AlumniDetail: React.FC<{ alumni: Alumni; onClose: () => void }> = ({ alumni, onClose }) => (
-    <div className="py-16 bg-transparent animate-fade-in">
+    <div className="py-12 md:py-16 bg-transparent animate-fade-in">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
             <button 
@@ -42,15 +42,15 @@ const AlumniDetail: React.FC<{ alumni: Alumni; onClose: () => void }> = ({ alumn
                 </svg>
                 Kembali ke Direktori
             </button>
-            <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-8 md:p-12">
+            <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
                     <div className="md:col-span-1 text-center">
                         <img 
                             src={alumni.avatarUrl.replace('150', '300')}
                             alt={alumni.name} 
-                            className="w-48 h-48 rounded-full mx-auto mb-4 border-8 border-white shadow-lg" 
+                            className="w-36 h-36 md:w-48 md:h-48 rounded-full mx-auto mb-4 border-8 border-white shadow-lg" 
                         />
-                         <h2 className="text-3xl font-extrabold text-gray-900">{alumni.name}</h2>
+                         <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900">{alumni.name}</h2>
                          <p className="text-brand-blue-600 font-semibold text-lg">Angkatan {alumni.graduationYear}</p>
                          <div className="mt-4 flex justify-center space-x-4">
                             {alumni.socials?.linkedin && <a href={alumni.socials.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${alumni.name}'s LinkedIn`} className="text-gray-500 hover:text-brand-blue-600"><LinkedInIcon className="h-7 w-7" /></a>}
@@ -136,7 +136,7 @@ const Directory: React.FC<DirectoryProps> = ({ isAdminLoggedIn, setActivePage })
   }
 
   return (
-    <div className="py-16 bg-transparent">
+    <div className="py-12 md:py-16 bg-transparent">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-base text-brand-blue-600 font-semibold tracking-wide uppercase">Direktori Alumni</h2>

@@ -21,7 +21,7 @@ const News: React.FC = () => {
   }, []);
 
   return (
-    <div className="py-16 bg-transparent">
+    <div className="py-12 md:py-16 bg-transparent">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-base text-brand-blue-600 font-semibold tracking-wide uppercase">Kabar Terkini</h2>

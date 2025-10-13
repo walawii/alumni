@@ -15,7 +15,7 @@ const Donate: React.FC = () => {
 
   return (
     <div className="bg-transparent">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-base text-brand-blue-600 font-semibold tracking-wide uppercase">Beri Dukungan</h2>
           <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">

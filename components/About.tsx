@@ -18,7 +18,7 @@ const About: React.FC<AboutProps> = ({ isAdminLoggedIn }) => {
   }
 
   return (
-    <div className="py-16 bg-transparent overflow-hidden">
+    <div className="py-12 md:py-16 bg-transparent overflow-hidden">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h2 className="text-base text-brand-blue-600 font-semibold tracking-wide uppercase">Tentang Kami</h2>

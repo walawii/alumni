@@ -1,6 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem } from '../types';
+import { MenuIcon, XIcon, UsersIcon, NewspaperIcon, PhotographIcon, DocumentTextIcon, CogIcon, GiftIcon } from './Icons';
+
 
 // Import all services
 import { getAlumni, deleteAlumni } from '../services/alumniService';
@@ -20,7 +21,7 @@ const FormField: React.FC<{label: string, name: string, value: string, onChange:
         id: name,
         value,
         onChange,
-        className: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500"
+        className: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500 text-sm md:text-base"
     };
     return (
         <div>
@@ -53,8 +54,8 @@ const ManageAlumni: React.FC = () => {
                     <thead className="bg-gray-50">
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Lulus</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pekerjaan</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tahun Lulus</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Pekerjaan</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
@@ -62,8 +63,8 @@ const ManageAlumni: React.FC = () => {
                         {alumni.map(alum => (
                             <tr key={alum.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{alum.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alum.graduationYear}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{alum.occupation}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{alum.graduationYear}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">{alum.occupation}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => alert('Fitur edit akan datang!')} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
                                     <button onClick={() => handleDelete(alum.id)} className="text-red-600 hover:text-red-900">Hapus</button>
@@ -155,7 +156,7 @@ const ManageNews: React.FC = () => {
                     <thead className="bg-gray-50">
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Tanggal</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Aksi</span></th>
                         </tr>
                     </thead>
@@ -163,7 +164,7 @@ const ManageNews: React.FC = () => {
                         {news.map(article => (
                             <tr key={article.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{article.title}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{article.date}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">{article.date}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => handleEdit(article)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
                                     <button onClick={() => handleDelete(article.id)} className="text-red-600 hover:text-red-900">Hapus</button>
@@ -204,7 +205,7 @@ const ManageGallery: React.FC = () => {
     return (
         <div>
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Kelola Galeri</h2>
-            <form onSubmit={handleAddImage} className="mb-6 flex gap-4">
+            <form onSubmit={handleAddImage} className="mb-6 flex flex-col sm:flex-row gap-4">
                 <input type="url" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="Masukkan URL gambar baru" className="flex-grow block w-full rounded-md border-gray-300 shadow-sm" required/>
                 <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah</button>
             </form>
@@ -404,10 +405,16 @@ const ManageSettings: React.FC = () => {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
   const [activeSection, setActiveSection] = useState<AdminSection>(initialSection);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     setActiveSection(initialSection);
   }, [initialSection]);
+
+  const handleNavClick = (section: AdminSection) => {
+    setActiveSection(section);
+    setIsSidebarOpen(false);
+  }
 
   const renderSection = () => {
     switch (activeSection) {
@@ -428,33 +435,75 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection }) => {
     }
   };
 
-  const navItems: AdminSection[] = ['Alumni', 'Berita', 'Galeri', 'Tentang Kami', 'Donasi', 'Pengaturan Umum'];
+  const navItems: { section: AdminSection, icon: React.FC<React.SVGProps<SVGSVGElement>> }[] = [
+    { section: 'Alumni', icon: UsersIcon },
+    { section: 'Berita', icon: NewspaperIcon },
+    { section: 'Galeri', icon: PhotographIcon },
+    { section: 'Tentang Kami', icon: DocumentTextIcon },
+    { section: 'Donasi', icon: GiftIcon },
+    { section: 'Pengaturan Umum', icon: CogIcon },
+  ];
+
+  const SideBarContent = () => (
+    <nav className="flex flex-col space-y-2 p-4">
+        {navItems.map(({section, icon: Icon}) => (
+          <button
+            key={section}
+            onClick={() => handleNavClick(section)}
+            className={`w-full flex items-center gap-3 text-left px-4 py-3 rounded-md font-semibold transition-colors duration-200 ${
+              activeSection === section
+                ? 'bg-brand-blue-600 text-white shadow'
+                : 'text-gray-700 hover:bg-brand-blue-100 hover:text-brand-blue-700'
+            }`}
+          >
+            <Icon className="h-5 w-5" />
+            <span>{section}</span>
+          </button>
+        ))}
+    </nav>
+  );
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Admin Dashboard</h1>
-      <div className="flex flex-col md:flex-row gap-8">
-        <aside className="md:w-1/4 lg:w-1/5">
-          <nav className="flex flex-col space-y-2 sticky top-24">
-            {navItems.map((section) => (
-              <button
-                key={section}
-                onClick={() => setActiveSection(section)}
-                className={`w-full text-left px-4 py-3 rounded-md font-semibold transition-colors duration-200 ${
-                  activeSection === section
-                    ? 'bg-brand-blue-600 text-white shadow'
-                    : 'bg-white/80 text-gray-700 hover:bg-brand-blue-100 hover:text-brand-blue-700'
-                }`}
-              >
-                {section}
-              </button>
-            ))}
-          </nav>
+        <div className="md:hidden flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-extrabold text-gray-900">Admin Dashboard</h1>
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2">
+                <MenuIcon className="h-6 w-6" />
+                <span className="sr-only">Buka Menu</span>
+            </button>
+        </div>
+
+        {/* Sidebar for Mobile */}
+        <div 
+            className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ${isSidebarOpen ? 'bg-black/60' : 'bg-transparent pointer-events-none'}`}
+            onClick={() => setIsSidebarOpen(false)}
+        ></div>
+        <aside 
+            className={`fixed top-0 left-0 h-full w-64 bg-gray-50 z-50 transform transition-transform duration-300 md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+            <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="font-bold">Menu Admin</h2>
+                <button onClick={() => setIsSidebarOpen(false)}>
+                    <XIcon className="h-6 w-6" />
+                    <span className="sr-only">Tutup Menu</span>
+                </button>
+            </div>
+            <SideBarContent />
         </aside>
-        <main className="md:w-3/4 lg:w-4/5 bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-lg">
-          {renderSection()}
-        </main>
-      </div>
+
+        <div className="flex flex-col md:flex-row gap-8">
+            {/* Sidebar for Desktop */}
+            <aside className="hidden md:block md:w-1/4 lg:w-1/5">
+              <div className="sticky top-24">
+                 <SideBarContent />
+              </div>
+            </aside>
+            <main className="flex-grow md:w-3/4 lg:w-4/5">
+                <div className="bg-white/80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg">
+                    {renderSection()}
+                </div>
+            </main>
+        </div>
     </div>
   );
 };
