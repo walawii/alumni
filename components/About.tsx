@@ -8,13 +8,32 @@ interface AboutProps {
 
 const About: React.FC<AboutProps> = ({ userRole }) => {
   const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setAboutInfo(getAboutInfo());
+    const fetchAboutInfo = async () => {
+      setIsLoading(true);
+      const data = await getAboutInfo();
+      setAboutInfo(data);
+      setIsLoading(false);
+    }
+    fetchAboutInfo();
   }, []);
 
+  if (isLoading) {
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-gray-500">Memuat informasi...</p>
+        </div>
+    );
+  }
+  
   if (!aboutInfo) {
-    return <div>Loading...</div>; // or some placeholder
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-red-500">Gagal memuat informasi.</p>
+        </div>
+    );
   }
 
   return (

@@ -1,54 +1,36 @@
 import type { Alumni } from '../types';
-import { ALUMNI_DATA } from '../constants';
+import { apiGet, apiSet } from './apiService';
 
-const ALUMNI_DB_KEY = 'alumniDatabase';
+const DB_KEY = 'alumni';
 
-// Function to get all alumni from localStorage
-export const getAlumni = (): Alumni[] => {
-  try {
-    const alumniJson = localStorage.getItem(ALUMNI_DB_KEY);
-    if (alumniJson) {
-      return JSON.parse(alumniJson);
-    } else {
-      // If no data, initialize with mock data
-      localStorage.setItem(ALUMNI_DB_KEY, JSON.stringify(ALUMNI_DATA));
-      return ALUMNI_DATA;
-    }
-  } catch (error) {
-    console.error("Failed to parse alumni data from localStorage", error);
-    // Fallback to mock data in case of parsing error
-    return ALUMNI_DATA;
-  }
-};
-
-// Function to save all alumni to localStorage
-const saveAlumni = (alumni: Alumni[]): void => {
-  localStorage.setItem(ALUMNI_DB_KEY, JSON.stringify(alumni));
+// Function to get all alumni from the mock API
+export const getAlumni = async (): Promise<Alumni[]> => {
+  return await apiGet(DB_KEY);
 };
 
 // Function to add a new alumnus
-export const addAlumni = (newAlumnus: Omit<Alumni, 'id'> & { id?: number }): void => {
-  const alumni = getAlumni();
+export const addAlumni = async (newAlumnus: Omit<Alumni, 'id'> & { id?: number }): Promise<void> => {
+  const alumni = await getAlumni();
   const alumnusToAdd: Alumni = {
     ...newAlumnus,
     id: newAlumnus.id || Date.now(), // Ensure ID exists
   };
   const updatedAlumni = [...alumni, alumnusToAdd];
-  saveAlumni(updatedAlumni);
+  await apiSet(DB_KEY, updatedAlumni);
 };
 
 // Function to update an existing alumnus
-export const updateAlumni = (updatedAlumnus: Alumni): void => {
-  const alumni = getAlumni();
+export const updateAlumni = async (updatedAlumnus: Alumni): Promise<void> => {
+  const alumni = await getAlumni();
   const updatedAlumniList = alumni.map(a => 
     a.id === updatedAlumnus.id ? updatedAlumnus : a
   );
-  saveAlumni(updatedAlumniList);
+  await apiSet(DB_KEY, updatedAlumniList);
 };
 
 // Function to delete an alumnus by ID
-export const deleteAlumni = (alumnusId: number): void => {
-  const alumni = getAlumni();
+export const deleteAlumni = async (alumnusId: number): Promise<void> => {
+  const alumni = await getAlumni();
   const updatedAlumni = alumni.filter(a => a.id !== alumnusId);
-  saveAlumni(updatedAlumni);
+  await apiSet(DB_KEY, updatedAlumni);
 };

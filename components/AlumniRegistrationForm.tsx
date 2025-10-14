@@ -21,6 +21,7 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -49,6 +50,7 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     let avatarUrl = `https://i.pravatar.cc/150?u=${Date.now()}`; // Default avatar with randomizer
 
@@ -86,7 +88,8 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
         };
     }
 
-    addAlumni(newAlumniData);
+    await addAlumni(newAlumniData);
+    setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
@@ -249,9 +252,10 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
                     <div>
                         <button
                             type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-brand-blue-600 hover:bg-brand-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue-500"
+                            disabled={isSubmitting}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-brand-blue-600 hover:bg-brand-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue-500 disabled:bg-brand-blue-400"
                         >
-                            Kirim Pendaftaran
+                            {isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
                         </button>
                     </div>
                 </form>

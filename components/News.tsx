@@ -15,9 +15,16 @@ const NewsCard: React.FC<{ article: NewsArticle }> = ({ article }) => (
 
 const News: React.FC = () => {
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setNewsArticles(getNews());
+    const fetchNews = async () => {
+      setIsLoading(true);
+      const data = await getNews();
+      setNewsArticles(data);
+      setIsLoading(false);
+    }
+    fetchNews();
   }, []);
 
   return (
@@ -30,11 +37,15 @@ const News: React.FC = () => {
           </p>
         </div>
         
-        <div className="grid gap-8 lg:grid-cols-3">
-          {newsArticles.map(article => (
-            <NewsCard key={article.id} article={article} />
-          ))}
-        </div>
+        {isLoading ? (
+            <div className="text-center text-gray-500">Memuat berita...</div>
+        ) : (
+            <div className="grid gap-8 lg:grid-cols-3">
+                {newsArticles.map(article => (
+                    <NewsCard key={article.id} article={article} />
+                ))}
+            </div>
+        )}
       </div>
     </div>
   );

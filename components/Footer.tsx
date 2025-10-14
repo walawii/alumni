@@ -14,11 +14,21 @@ const Footer: React.FC<FooterProps> = ({ setActivePage, userRole }) => {
   const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
-    setSettings(getSettings());
+    const fetchSettings = async () => {
+        const data = await getSettings();
+        setSettings(data);
+    }
+    fetchSettings();
   }, []);
 
   if (!settings) {
-    return null; // or a loading spinner
+    return (
+        <footer className="bg-white/70 backdrop-blur-md border-t border-white/30">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center text-gray-500">
+                Memuat footer...
+            </div>
+        </footer>
+    );
   }
   
   const { logoUrl, address, email, socials } = settings;

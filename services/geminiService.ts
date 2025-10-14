@@ -23,7 +23,7 @@ const fileToGenerativePart = async (file: File) => {
 
 interface GeneratedStory {
     title: string;
-    excerpt: string;
+    content: string;
 }
 
 export const generateNewsStory = async (
@@ -35,20 +35,20 @@ export const generateNewsStory = async (
         const imagePart = await fileToGenerativePart(image);
         
         const textPart = {
-            text: `Based on the provided image and the following keywords/description, generate a compelling news article title and a short excerpt (around 2-3 sentences) suitable for an alumni website.
+            text: `Based on the provided image and the following keywords/description, generate a compelling news article title and the full article content (around 500 words) suitable for an alumni website.
             
             Keywords/Description: "${prompt}"
             
-            Return the result in a JSON object with "title" and "excerpt" keys.`,
+            Return the result in a JSON object with "title" and "content" keys. The content should be well-structured, engaging, and written in Indonesian.`,
         };
 
         const responseSchema = {
             type: Type.OBJECT,
             properties: {
                 title: { type: Type.STRING },
-                excerpt: { type: Type.STRING },
+                content: { type: Type.STRING },
             },
-            required: ['title', 'excerpt'],
+            required: ['title', 'content'],
         };
         
         const response = await ai.models.generateContent({
@@ -65,7 +65,7 @@ export const generateNewsStory = async (
         
         return {
             title: parsedJson.title || 'Judul Gagal Dibuat',
-            excerpt: parsedJson.excerpt || 'Kutipan gagal dibuat. Silakan coba lagi.'
+            content: parsedJson.content || 'Konten gagal dibuat. Silakan coba lagi.'
         };
 
     } catch (error) {

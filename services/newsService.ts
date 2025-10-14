@@ -1,52 +1,37 @@
 import type { NewsArticle } from '../types';
-import { NEWS_ARTICLES } from '../constants';
+import { apiGet, apiSet } from './apiService';
 
-const NEWS_DB_KEY = 'newsDatabase';
+const DB_KEY = 'news';
 
-// Function to get all news from localStorage
-export const getNews = (): NewsArticle[] => {
-  try {
-    const newsJson = localStorage.getItem(NEWS_DB_KEY);
-    if (newsJson) {
-      return JSON.parse(newsJson);
-    } else {
-      // If no data, initialize with mock data
-      localStorage.setItem(NEWS_DB_KEY, JSON.stringify(NEWS_ARTICLES));
-      return NEWS_ARTICLES;
-    }
-  } catch (error) {
-    console.error("Failed to parse news data from localStorage", error);
-    return NEWS_ARTICLES;
-  }
-};
-
-// Function to save all news to localStorage
-const saveNews = (articles: NewsArticle[]): void => {
-  localStorage.setItem(NEWS_DB_KEY, JSON.stringify(articles));
+// Function to get all news from the mock API
+export const getNews = async (): Promise<NewsArticle[]> => {
+  return await apiGet(DB_KEY);
 };
 
 // Function to add a new news article
-export const addNews = (newArticle: Omit<NewsArticle, 'id'> & { id?: number }): void => {
-  const articles = getNews();
+export const addNews = async (newArticle: Omit<NewsArticle, 'id'> & { id?: number }): Promise<void> => {
+  const articles = await getNews();
   const articleToAdd: NewsArticle = {
     ...newArticle,
     id: newArticle.id || Date.now(),
   };
-  saveNews([...articles, articleToAdd]);
+  // Add to the beginning of the list
+  const updatedArticles = [articleToAdd, ...articles];
+  await apiSet(DB_KEY, updatedArticles);
 };
 
 // Function to update an existing news article
-export const updateNews = (updatedArticle: NewsArticle): void => {
-  const articles = getNews();
+export const updateNews = async (updatedArticle: NewsArticle): Promise<void> => {
+  const articles = await getNews();
   const updatedList = articles.map(a => 
     a.id === updatedArticle.id ? updatedArticle : a
   );
-  saveNews(updatedList);
+  await apiSet(DB_KEY, updatedList);
 };
 
 // Function to delete a news article by ID
-export const deleteNews = (articleId: number): void => {
-  const articles = getNews();
+export const deleteNews = async (articleId: number): Promise<void> => {
+  const articles = await getNews();
   const updatedArticles = articles.filter(a => a.id !== articleId);
-  saveNews(updatedArticles);
+  await apiSet(DB_KEY, updatedArticles);
 };

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { MenuItem, Page, AdminSection, UserRole } from '../types';
 import { MenuIcon, XIcon, GearIcon } from './Icons';
 import { getSettings } from '../services/settingsService';
+import { INITIAL_SETTINGS } from '../constants';
+
 
 interface HeaderProps {
   menuItems: MenuItem[];
@@ -14,7 +16,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, userRole, onLogout, onAdminNav }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState(INITIAL_SETTINGS.logoUrl); // Initial fallback
 
   useEffect(() => {
     const handleResize = () => {
@@ -27,7 +29,11 @@ const Header: React.FC<HeaderProps> = ({ menuItems, activePage, setActivePage, u
   }, []);
 
   useEffect(() => {
-    setLogoUrl(getSettings().logoUrl);
+    const fetchSettings = async () => {
+      const settings = await getSettings();
+      setLogoUrl(settings.logoUrl);
+    }
+    fetchSettings();
   }, [userRole, activePage]);
 
 

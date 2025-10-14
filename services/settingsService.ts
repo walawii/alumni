@@ -1,23 +1,12 @@
 import type { Settings } from '../types';
-import { INITIAL_SETTINGS } from '../constants';
+import { apiGet, apiSet } from './apiService';
 
-const SETTINGS_DB_KEY = 'settingsDatabase';
+const DB_KEY = 'settings';
 
-export const getSettings = (): Settings => {
-  try {
-    const settingsJson = localStorage.getItem(SETTINGS_DB_KEY);
-    if (settingsJson) {
-      return JSON.parse(settingsJson);
-    } else {
-      localStorage.setItem(SETTINGS_DB_KEY, JSON.stringify(INITIAL_SETTINGS));
-      return INITIAL_SETTINGS;
-    }
-  } catch (error) {
-    console.error("Failed to parse settings data from localStorage", error);
-    return INITIAL_SETTINGS;
-  }
+export const getSettings = async (): Promise<Settings> => {
+  return await apiGet(DB_KEY);
 };
 
-export const updateSettings = (newSettings: Settings): void => {
-  localStorage.setItem(SETTINGS_DB_KEY, JSON.stringify(newSettings));
+export const updateSettings = async (newSettings: Settings): Promise<void> => {
+  await apiSet(DB_KEY, newSettings);
 };

@@ -19,6 +19,12 @@ interface AdminDashboardProps {
   username: string;
 }
 
+const LoadingSpinner: React.FC<{text?: string}> = ({ text = "Memuat data..."}) => (
+    <div className="text-center py-10">
+        <p className="text-gray-500">{text}</p>
+    </div>
+);
+
 const FormField: React.FC<{label: string, name: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void, type?: string, as?: 'textarea', rows?: number, required?: boolean, disabled?: boolean}> = ({label, name, value, onChange, type='text', as, rows, required, disabled}) => {
     const commonProps = {
         name,
@@ -39,17 +45,27 @@ const FormField: React.FC<{label: string, name: string, value: string, onChange:
 
 const ManageAlumni: React.FC = () => {
     const [alumni, setAlumni] = useState<Alumni[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     
+    const fetchAlumni = async () => {
+        setIsLoading(true);
+        const data = await getAlumni();
+        setAlumni(data);
+        setIsLoading(false);
+    }
+
     useEffect(() => {
-        setAlumni(getAlumni());
+        fetchAlumni();
     }, []);
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus data alumni ini?')) {
-            deleteAlumni(id);
-            setAlumni(getAlumni()); // Refresh the list
+            await deleteAlumni(id);
+            await fetchAlumni(); // Refresh the list
         }
     }
+    
+    if(isLoading) return <LoadingSpinner />;
 
     return (
         <div>
@@ -84,8 +100,9 @@ const ManageAlumni: React.FC = () => {
     );
 }
 
-const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) => void, onCancel: () => void}> = ({article, onSave, onCancel}) => {
+const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) => Promise<void>, onCancel: () => void}> = ({article, onSave, onCancel}) => {
     const [formData, setFormData] = useState(article);
+    const [isSaving, setIsSaving] = useState(false);
     const [aiPrompt, setAiPrompt] = useState('');
     const [aiImageFile, setAiImageFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -94,7 +111,7 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({...formData, [e.target.name]: e.target.value});
     };
-
+    
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setAiImageFile(e.target.files[0]);
@@ -113,7 +130,7 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
             setFormData(prev => ({
                 ...prev,
                 title: result.title,
-                excerpt: result.excerpt,
+                excerpt: result.content,
             }));
         } catch (error: any) {
             setAiError(error.message || 'Terjadi kesalahan saat membuat cerita.');
@@ -122,21 +139,22 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData);
+        setIsSaving(true);
+        await onSave(formData);
+        setIsSaving(false);
     }
     return (
         <form onSubmit={handleSubmit}>
             <h2 className="text-2xl font-bold mb-4">{formData.id ? 'Edit' : 'Tambah'} Berita</h2>
             
-            {/* AI Generator Section */}
             <div className="p-4 border-2 border-dashed rounded-lg mb-6 bg-brand-blue-50/50 border-brand-blue-200">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <SparklesIcon className="h-5 w-5 text-brand-blue-500" />
                     Generator Berita AI
                 </h3>
-                <p className="text-sm text-gray-600 mt-1 mb-4">Buat draf berita secara otomatis berdasarkan gambar dan deskripsi singkat.</p>
+                <p className="text-sm text-gray-600 mt-1 mb-4">Buat draf berita lengkap (sekitar 500 kata) secara otomatis berdasarkan gambar dan deskripsi.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <div>
@@ -173,7 +191,7 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
                     >
                         {isGenerating ? (
                             <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="http://www.w3.org/2000/svg">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
@@ -182,24 +200,24 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
                         ) : (
                             <>
                                 <SparklesIcon className="h-5 w-5" />
-                                Buat Cerita
+                                Buat Berita Lengkap
                             </>
                         )}
                     </button>
                     {aiError && <p className="text-red-600 text-sm mt-2">{aiError}</p>}
                 </div>
             </div>
-            {/* End AI Generator Section */}
-
 
             <div className="space-y-4">
                 <FormField label="Judul" name="title" value={formData.title} onChange={handleChange} required/>
-                <FormField label="Kutipan" name="excerpt" value={formData.excerpt} onChange={handleChange} as="textarea" required/>
+                <FormField label="Isi Berita" name="excerpt" value={formData.excerpt} onChange={handleChange} as="textarea" rows={15} required/>
                 <FormField label="URL Gambar" name="imageUrl" value={formData.imageUrl} onChange={handleChange} required/>
             </div>
             <div className="mt-6 flex justify-end gap-4">
-                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
-                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan</button>
+                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300" disabled={isSaving}>Batal</button>
+                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 disabled:bg-brand-blue-400" disabled={isSaving}>
+                    {isSaving ? 'Menyimpan...' : 'Simpan'}
+                </button>
             </div>
         </form>
     )
@@ -207,45 +225,51 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
 
 const ManageNews: React.FC = () => {
     const [news, setNews] = useState<NewsArticle[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState<NewsArticle | null>(null);
+    
+    const fetchNews = async () => {
+        setIsLoading(true);
+        const data = await getNews();
+        setNews(data);
+        setIsLoading(false);
+    }
 
     useEffect(() => {
-        setNews(getNews());
+        fetchNews();
     }, []);
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus berita ini?')) {
-            deleteNews(id);
-            setNews(getNews());
+            await deleteNews(id);
+            await fetchNews();
         }
     }
 
     const handleEdit = (article: NewsArticle) => {
         setIsEditing(article);
     };
-
-    const handleCancelEdit = () => {
-        setIsEditing(null);
-    }
     
-    const handleSave = (articleToSave: NewsArticle) => {
+    const handleSave = async (articleToSave: NewsArticle) => {
         if (articleToSave.id) {
-            updateNews(articleToSave);
+            await updateNews(articleToSave);
         } else {
-            addNews({
+            await addNews({
                 title: articleToSave.title,
                 date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
                 excerpt: articleToSave.excerpt,
                 imageUrl: articleToSave.imageUrl || `https://picsum.photos/seed/${Date.now()}/600/400`
             });
         }
-        setNews(getNews());
         setIsEditing(null);
+        await fetchNews();
     }
 
     if (isEditing) {
-        return <NewsForm article={isEditing} onSave={handleSave} onCancel={handleCancelEdit} />
+        return <NewsForm article={isEditing} onSave={handleSave} onCancel={() => setIsEditing(null)} />
     }
+    
+    if(isLoading) return <LoadingSpinner />;
 
     return (
         <div>
@@ -282,27 +306,37 @@ const ManageNews: React.FC = () => {
 
 const ManageGallery: React.FC = () => {
     const [images, setImages] = useState<GalleryImage[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [newImageUrl, setNewImageUrl] = useState('');
 
+    const fetchImages = async () => {
+        setIsLoading(true);
+        const data = await getGalleryImages();
+        setImages(data);
+        setIsLoading(false);
+    }
+
     useEffect(() => {
-        setImages(getGalleryImages());
+        fetchImages();
     }, []);
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus gambar ini?')) {
-            deleteGalleryImage(id);
-            setImages(getGalleryImages());
+            await deleteGalleryImage(id);
+            await fetchImages();
         }
     }
 
-    const handleAddImage = (e: React.FormEvent) => {
+    const handleAddImage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newImageUrl.trim()) {
-            addGalleryImage(newImageUrl);
-            setImages(getGalleryImages());
+            await addGalleryImage(newImageUrl);
             setNewImageUrl('');
+            await fetchImages();
         }
     }
+    
+    if(isLoading) return <LoadingSpinner />;
 
     return (
         <div>
@@ -331,9 +365,16 @@ const ManageGallery: React.FC = () => {
 
 const ManageAbout: React.FC = () => {
     const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setAboutInfo(getAboutInfo());
+        const fetchAbout = async () => {
+            setIsLoading(true);
+            const data = await getAboutInfo();
+            setAboutInfo(data);
+            setIsLoading(false);
+        }
+        fetchAbout();
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -365,15 +406,15 @@ const ManageAbout: React.FC = () => {
         });
     };
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (aboutInfo) {
-            updateAboutInfo(aboutInfo);
+            await updateAboutInfo(aboutInfo);
             alert('Informasi "Tentang Kami" berhasil diperbarui!');
         }
     }
 
-    if (!aboutInfo) return <div>Loading...</div>;
+    if (isLoading || !aboutInfo) return <LoadingSpinner />;
 
     return (
         <form onSubmit={handleSave}>
@@ -416,21 +457,28 @@ const ManageAbout: React.FC = () => {
 
 const ManageDonations: React.FC = () => {
     const [donationInfo, setDonationInfo] = useState<DonationInfo | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setDonationInfo(getDonationInfo());
+        const fetchDonations = async () => {
+            setIsLoading(true);
+            const data = await getDonationInfo();
+            setDonationInfo(data);
+            setIsLoading(false);
+        }
+        fetchDonations();
     }, []);
 
-    if (!donationInfo) return <div>Loading...</div>;
+    if (isLoading || !donationInfo) return <LoadingSpinner />;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setDonationInfo(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
     }
     
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (donationInfo) {
-            updateDonationInfo(donationInfo);
+            await updateDonationInfo(donationInfo);
             alert('Informasi Donasi berhasil diperbarui!');
         }
     }
@@ -457,12 +505,19 @@ const ManageDonations: React.FC = () => {
 
 const ManageSettings: React.FC = () => {
     const [settings, setSettings] = useState<Settings | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        setSettings(getSettings());
+        const fetchSettings = async () => {
+            setIsLoading(true);
+            const data = await getSettings();
+            setSettings(data);
+            setIsLoading(false);
+        }
+        fetchSettings();
     }, []);
 
-    if (!settings) return <div>Loading...</div>;
+    if (isLoading || !settings) return <LoadingSpinner />;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSettings(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
@@ -475,10 +530,10 @@ const ManageSettings: React.FC = () => {
         } : null);
     }
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (settings) {
-            updateSettings(settings);
+            await updateSettings(settings);
             alert('Pengaturan Umum berhasil diperbarui!');
         }
     }
@@ -505,33 +560,34 @@ const ManageSettings: React.FC = () => {
     );
 };
 
-const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => void, onCancel: () => void, onError: (msg: string) => void}> = ({user, onSave, onCancel, onError}) => {
+const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => Promise<void>, onCancel: () => void, onError: (msg: string) => void}> = ({user, onSave, onCancel, onError}) => {
     const [formData, setFormData] = useState({...user, password: ''}); // Clear password for editing
+    const [isSaving, setIsSaving] = useState(false);
     const isEditing = !!user.id;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({...formData, [e.target.name]: e.target.value});
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isEditing && !formData.password) {
             onError("Password wajib diisi untuk admin baru.");
             return;
         }
         
-        let userToSave = { ...formData, password: formData.password || user.password };
-
+        setIsSaving(true);
         if(isEditing) {
-            onSave(userToSave)
+            await onSave(formData);
         } else {
-             const result = addAdminUser(userToSave);
+             const result = await addAdminUser(formData);
              if (result.success) {
-                onSave(userToSave);
+                await onSave(formData);
              } else {
                 onError(result.message || 'Gagal menyimpan admin.');
              }
         }
+        setIsSaving(false);
     }
 
     return (
@@ -550,8 +606,10 @@ const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => voi
                 </div>
             </div>
             <div className="mt-6 flex justify-end gap-4">
-                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Batal</button>
-                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Simpan</button>
+                <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300" disabled={isSaving}>Batal</button>
+                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700" disabled={isSaving}>
+                    {isSaving ? 'Menyimpan...' : 'Simpan'}
+                </button>
             </div>
         </form>
     )
@@ -559,11 +617,18 @@ const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => voi
 
 const ManageAdmins: React.FC<{currentUser: string}> = ({currentUser}) => {
     const [users, setUsers] = useState<AdminUser[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState<AdminUser | null>(null);
     const [error, setError] = useState('');
 
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        const data = await getAdminUsers();
+        setUsers(data);
+        setIsLoading(false);
+    }
     useEffect(() => {
-        setUsers(getAdminUsers());
+        fetchUsers();
     }, []);
     
     const handleEdit = (user: AdminUser) => {
@@ -571,33 +636,35 @@ const ManageAdmins: React.FC<{currentUser: string}> = ({currentUser}) => {
         setIsEditing(user);
     }
 
-    const handleDelete = (user: AdminUser) => {
+    const handleDelete = async (user: AdminUser) => {
         if(user.username === currentUser) {
             alert('Anda tidak dapat menghapus akun Anda sendiri.');
             return;
         }
 
         if (window.confirm(`Apakah Anda yakin ingin menghapus user ${user.username}?`)) {
-            const result = deleteAdminUser(user.id);
+            const result = await deleteAdminUser(user.id);
             if(result.success) {
-                setUsers(getAdminUsers());
+                await fetchUsers();
             } else {
                 alert(result.message);
             }
         }
     }
     
-    const handleSave = (userToSave: AdminUser) => {
+    const handleSave = async (userToSave: AdminUser) => {
         if (userToSave.id) {
-            updateAdminUser(userToSave);
+            await updateAdminUser(userToSave);
         }
-        setUsers(getAdminUsers());
         setIsEditing(null);
+        await fetchUsers();
     }
 
     if(isEditing) {
         return <AdminUserForm user={isEditing} onSave={handleSave} onCancel={() => setIsEditing(null)} onError={setError} />
     }
+    
+    if(isLoading) return <LoadingSpinner />;
 
     return (
         <div>
@@ -744,7 +811,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection, userRol
               </div>
             </aside>
             <main className="flex-grow md:w-3/4 lg:w-4/5">
-                <div className="bg-white/80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg">
+                <div className="bg-white/80 backdrop-blur-md p-4 sm:p-6 md:p-8 rounded-xl shadow-lg min-h-[300px]">
                     {renderSection()}
                 </div>
             </main>

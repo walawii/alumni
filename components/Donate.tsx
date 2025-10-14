@@ -4,13 +4,32 @@ import type { DonationInfo } from '../types';
 
 const Donate: React.FC = () => {
   const [donationInfo, setDonationInfo] = useState<DonationInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setDonationInfo(getDonationInfo());
+    const fetchDonationInfo = async () => {
+        setIsLoading(true);
+        const data = await getDonationInfo();
+        setDonationInfo(data);
+        setIsLoading(false);
+    }
+    fetchDonationInfo();
   }, []);
 
+  if (isLoading) {
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-gray-500">Memuat informasi donasi...</p>
+        </div>
+    );
+  }
+
   if (!donationInfo) {
-    return <div>Loading...</div>;
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-red-500">Gagal memuat informasi.</p>
+        </div>
+    );
   }
 
   return (

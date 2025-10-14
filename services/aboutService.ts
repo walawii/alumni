@@ -1,23 +1,12 @@
 import type { AboutInfo } from '../types';
-import { INITIAL_ABOUT_INFO } from '../constants';
+import { apiGet, apiSet } from './apiService';
 
-const ABOUT_DB_KEY = 'aboutInfoDatabase';
+const DB_KEY = 'about';
 
-export const getAboutInfo = (): AboutInfo => {
-  try {
-    const aboutJson = localStorage.getItem(ABOUT_DB_KEY);
-    if (aboutJson) {
-      return JSON.parse(aboutJson);
-    } else {
-      localStorage.setItem(ABOUT_DB_KEY, JSON.stringify(INITIAL_ABOUT_INFO));
-      return INITIAL_ABOUT_INFO;
-    }
-  } catch (error) {
-    console.error("Failed to parse about info data from localStorage", error);
-    return INITIAL_ABOUT_INFO;
-  }
+export const getAboutInfo = async (): Promise<AboutInfo> => {
+  return await apiGet(DB_KEY);
 };
 
-export const updateAboutInfo = (newAboutInfo: AboutInfo): void => {
-  localStorage.setItem(ABOUT_DB_KEY, JSON.stringify(newAboutInfo));
+export const updateAboutInfo = async (newAboutInfo: AboutInfo): Promise<void> => {
+  await apiSet(DB_KEY, newAboutInfo);
 };

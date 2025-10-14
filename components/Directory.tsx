@@ -97,19 +97,24 @@ const AlumniDetail: React.FC<{ alumni: Alumni; onClose: () => void }> = ({ alumn
 
 const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
   const [allAlumni, setAllAlumni] = useState<Alumni[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterYear, setFilterYear] = useState<string>('');
   const [selectedAlumni, setSelectedAlumni] = useState<Alumni | null>(null);
   
   useEffect(() => {
-    setAllAlumni(getAlumni());
+    const fetchAlumni = async () => {
+        setIsLoading(true);
+        const data = await getAlumni();
+        setAllAlumni(data);
+        setIsLoading(false);
+    }
+    fetchAlumni();
   }, []);
 
 
   const uniqueYears = useMemo(() => {
     const years = allAlumni.map(a => a.graduationYear);
-    // FIX: The left-hand side and right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    // Values from localStorage might not be numbers.
     return [...new Set(years)].sort((a, b) => Number(b) - Number(a));
   }, [allAlumni]);
 
@@ -133,6 +138,32 @@ const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
 
   if (selectedAlumni) {
     return <AlumniDetail alumni={selectedAlumni} onClose={handleCloseProfile} />
+  }
+
+  const renderContent = () => {
+    if (isLoading) {
+        return <div className="text-center py-16 text-gray-500">Memuat direktori alumni...</div>
+    }
+    if (filteredAlumni.length > 0) {
+        return (
+             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {filteredAlumni.map(alumni => (
+                <AlumniCard 
+                    key={alumni.id} 
+                    alumni={alumni} 
+                    userRole={userRole} 
+                    onClick={() => handleViewProfile(alumni)}
+                />
+                ))}
+            </div>
+        )
+    }
+    return (
+        <div className="text-center py-16 bg-white/60 backdrop-blur-md rounded-lg shadow-md">
+            <p className="text-xl text-gray-600">Alumni tidak ditemukan.</p>
+            <p className="text-gray-500 mt-2">Coba ubah kata kunci pencarian atau filter angkatan Anda.</p>
+        </div>
+    )
   }
 
   return (
@@ -163,6 +194,7 @@ const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
               className="px-4 py-3 rounded-md border-gray-300 focus:ring-brand-blue-500 focus:border-brand-blue-500"
+              disabled={isLoading}
             >
               <option value="">Semua Angkatan</option>
               {uniqueYears.map(year => (
@@ -172,23 +204,7 @@ const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
           </div>
         </div>
 
-        {filteredAlumni.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {filteredAlumni.map(alumni => (
-              <AlumniCard 
-                key={alumni.id} 
-                alumni={alumni} 
-                userRole={userRole} 
-                onClick={() => handleViewProfile(alumni)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 bg-white/60 backdrop-blur-md rounded-lg shadow-md">
-            <p className="text-xl text-gray-600">Alumni tidak ditemukan.</p>
-            <p className="text-gray-500 mt-2">Coba ubah kata kunci pencarian atau filter angkatan Anda.</p>
-          </div>
-        )}
+        {renderContent()}
 
         <div className="text-center mt-16">
             <h3 className="text-2xl font-bold text-gray-800">Belum Terdaftar?</h3>

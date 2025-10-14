@@ -4,13 +4,32 @@ import type { Settings } from '../types';
 
 const Contact: React.FC = () => {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setSettings(getSettings());
+    const fetchSettings = async () => {
+        setIsLoading(true);
+        const data = await getSettings();
+        setSettings(data);
+        setIsLoading(false);
+    }
+    fetchSettings();
   }, []);
 
+  if (isLoading) {
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-gray-500">Memuat informasi kontak...</p>
+        </div>
+    );
+  }
+
   if (!settings) {
-    return <div>Loading...</div>;
+    return (
+        <div className="py-12 md:py-16 bg-transparent text-center">
+            <p className="text-red-500">Gagal memuat informasi.</p>
+        </div>
+    );
   }
 
   return (

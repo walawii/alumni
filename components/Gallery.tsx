@@ -4,9 +4,16 @@ import type { GalleryImage } from '../types';
 
 const Gallery: React.FC = () => {
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setImages(getGalleryImages());
+    const fetchImages = async () => {
+        setIsLoading(true);
+        const data = await getGalleryImages();
+        setImages(data);
+        setIsLoading(false);
+    }
+    fetchImages();
   }, []);
 
   return (
@@ -21,18 +28,22 @@ const Gallery: React.FC = () => {
             Jelajahi kembali momen-momen indah selama di SMAN 7 Tasikmalaya dan di berbagai acara alumni.
           </p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
-          {images.map((image) => (
-            <div key={image.id} className="group relative">
-              <img
-                src={image.url}
-                alt={`Gallery image ${image.id}`}
-                className="w-full h-40 md:h-64 object-cover rounded-lg shadow-md transition-transform duration-300 transform group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity duration-300 rounded-lg"></div>
+        {isLoading ? (
+            <div className="text-center text-gray-500">Memuat galeri...</div>
+        ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
+                {images.map((image) => (
+                    <div key={image.id} className="group relative">
+                    <img
+                        src={image.url}
+                        alt={`Gallery image ${image.id}`}
+                        className="w-full h-40 md:h-64 object-cover rounded-lg shadow-md transition-transform duration-300 transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity duration-300 rounded-lg"></div>
+                    </div>
+                ))}
             </div>
-          ))}
-        </div>
+        )}
       </div>
     </div>
   );

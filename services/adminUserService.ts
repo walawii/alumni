@@ -1,39 +1,25 @@
-import type { AdminUser, UserRole } from '../types';
+import type { AdminUser } from '../types';
+import { apiGet, apiSet } from './apiService';
 
-const ADMIN_USERS_DB_KEY = 'adminUsersDatabase';
+const DB_KEY = 'adminUsers';
 
-const INITIAL_ADMIN_USERS: AdminUser[] = [
+export const INITIAL_ADMIN_USERS: AdminUser[] = [
     { id: 1, username: 'admin', password: 'password', role: 'Admin' },
     { id: 2, username: 'content', password: 'password', role: 'Content Manager' },
 ];
 
-export const getAdminUsers = (): AdminUser[] => {
-    try {
-        const usersJson = localStorage.getItem(ADMIN_USERS_DB_KEY);
-        if (usersJson) {
-            return JSON.parse(usersJson);
-        } else {
-            localStorage.setItem(ADMIN_USERS_DB_KEY, JSON.stringify(INITIAL_ADMIN_USERS));
-            return INITIAL_ADMIN_USERS;
-        }
-    } catch (error) {
-        console.error("Failed to parse admin users from localStorage", error);
-        return INITIAL_ADMIN_USERS;
-    }
+export const getAdminUsers = async (): Promise<AdminUser[]> => {
+    return await apiGet(DB_KEY);
 };
 
-const saveAdminUsers = (users: AdminUser[]): void => {
-    localStorage.setItem(ADMIN_USERS_DB_KEY, JSON.stringify(users));
-};
-
-export const authenticateUser = (username: string, password: string):AdminUser | null => {
-    const users = getAdminUsers();
+export const authenticateUser = async (username: string, password: string): Promise<AdminUser | null> => {
+    const users = await getAdminUsers();
     const user = users.find(u => u.username === username && u.password === password);
     return user || null;
 };
 
-export const addAdminUser = (newUser: Omit<AdminUser, 'id'>): { success: boolean, message?: string } => {
-    const users = getAdminUsers();
+export const addAdminUser = async (newUser: Omit<AdminUser, 'id'>): Promise<{ success: boolean, message?: string }> => {
+    const users = await getAdminUsers();
     if (users.some(u => u.username.toLowerCase() === newUser.username.toLowerCase())) {
         return { success: false, message: 'Username sudah ada.' };
     }
@@ -41,20 +27,24 @@ export const addAdminUser = (newUser: Omit<AdminUser, 'id'>): { success: boolean
         ...newUser,
         id: Date.now(),
     };
-    saveAdminUsers([...users, userToAdd]);
+    await apiSet(DB_KEY, [...users, userToAdd]);
     return { success: true };
 };
 
-export const updateAdminUser = (updatedUser: AdminUser): void => {
-    const users = getAdminUsers();
+export const updateAdminUser = async (updatedUser: AdminUser): Promise<void> => {
+    const users = await getAdminUsers();
+    // Ensure password is not blanked out if not provided
+    const originalUser = users.find(u => u.id === updatedUser.id);
+    if (originalUser && !updatedUser.password) {
+        updatedUser.password = originalUser.password;
+    }
     const updatedList = users.map(u => u.id === updatedUser.id ? updatedUser : u);
-    saveAdminUsers(updatedList);
+    await apiSet(DB_KEY, updatedList);
 };
 
-export const deleteAdminUser = (userId: number): { success: boolean, message?: string } => {
-    const users = getAdminUsers();
+export const deleteAdminUser = async (userId: number): Promise<{ success: boolean, message?: string }> => {
+    const users = await getAdminUsers();
     
-    // Safeguard: Prevent deleting the last remaining admin
     const adminUsers = users.filter(u => u.role === 'Admin');
     const userToDelete = users.find(u => u.id === userId);
 
@@ -63,6 +53,6 @@ export const deleteAdminUser = (userId: number): { success: boolean, message?: s
     }
 
     const updatedUsers = users.filter(u => u.id !== userId);
-    saveAdminUsers(updatedUsers);
+    await apiSet(DB_KEY, updatedUsers);
     return { success: true };
 };
