@@ -25,6 +25,15 @@ const AlumniCard: React.FC<{ alumni: Alumni; userRole: UserRole | null; onClick:
     <p className="text-brand-blue-600 font-semibold">Angkatan {alumni.graduationYear}</p>
     <p className="text-gray-600 mt-2">{alumni.occupation}</p>
     <p className="text-gray-500 text-sm">{alumni.city}</p>
+    
+    {alumni.phone?.showInDirectory && (
+        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2 text-sm text-green-600 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            {alumni.phone.number}
+        </div>
+    )}
   </div>
 );
 
@@ -71,7 +80,7 @@ const AlumniDetail: React.FC<{ alumni: Alumni; onClose: () => void }> = ({ alumn
                              {alumni.phone?.showInDirectory && (
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Telepon</h3>
-                                    <p className="text-xl text-gray-800">{alumni.phone.number}</p>
+                                    <p className="text-xl text-gray-800 font-bold text-green-600">{alumni.phone.number}</p>
                                 </div>
                             )}
                             {alumni.bio && (
@@ -184,7 +193,7 @@ const Directory: React.FC<DirectoryProps> = ({ userRole, setActivePage }) => {
                 placeholder="Cari nama, profesi, atau kota..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-md border-gray-300 focus:ring-brand-blue-500 focus:border-brand-blue-500"
+                className="w-full pl-12 pr-4 py-3 rounded-md border-gray-300 shadow-sm focus:ring-brand-blue-500 focus:border-brand-blue-500"
               />
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <SearchIcon className="h-5 w-5 text-gray-400" />
