@@ -1,4 +1,3 @@
-// FIX: Removed self-import of Page type which caused a conflict.
 
 export type Page =
   | 'Beranda'
@@ -17,7 +16,7 @@ export type UserRole = 'Admin' | 'Content Manager';
 export interface AdminUser {
   id: number;
   username: string;
-  password: string; // In a real app, this would be a hash
+  password: string;
   role: UserRole;
 }
 
@@ -39,8 +38,17 @@ export interface GalleryImage {
   url: string;
 }
 
+export interface VideoClip {
+  id: number;
+  headline: string;
+  subHeadline: string;
+  imageUrl: string;
+  videoUrl?: string;
+  status: 'idle' | 'processing' | 'completed' | 'error';
+}
+
 export interface Alumni {
-  id: number; // ID is now mandatory
+  id: number;
   name: string;
   graduationYear: number;
   occupation: string;
@@ -100,4 +108,4 @@ export interface DonationInfo {
     accountHolder: string;
 }
 
-export type AdminSection = 'Alumni' | 'Berita' | 'Galeri' | 'Tentang Kami' | 'Donasi' | 'Pengaturan Umum' | 'Kelola Admin';
+export type AdminSection = 'Alumni' | 'Berita' | 'Video Studio' | 'Galeri' | 'Tentang Kami' | 'Donasi' | 'Pengaturan Umum' | 'Kelola Admin';

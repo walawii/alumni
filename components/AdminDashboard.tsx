@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem, UserRole, AdminUser } from '../types';
+import type { AdminSection, Alumni, NewsArticle, GalleryImage, Settings, AboutInfo, DonationInfo, VisiMisiItem, UserRole, AdminUser, VideoClip } from '../types';
 import { MenuIcon, XIcon, UsersIcon, NewspaperIcon, PhotographIcon, DocumentTextIcon, CogIcon, GiftIcon, UserGroupIcon, SparklesIcon } from './Icons';
 import { generateNewsStory } from '../services/geminiService';
-
+import { generateAlumniVideo } from '../services/videoService';
 
 // Import all services
 import { getAlumni, deleteAlumni } from '../services/alumniService';
@@ -42,6 +43,152 @@ const FormField: React.FC<{label: string, name: string, value: string, onChange:
         </div>
     )
 }
+
+const VideoIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+  </svg>
+);
+
+const ManageVideoStudio: React.FC = () => {
+    const [clips, setClips] = useState<VideoClip[]>([]);
+    const [isAdding, setIsAdding] = useState(false);
+    const [newClip, setNewClip] = useState<Omit<VideoClip, 'id' | 'status'>>({
+        headline: '',
+        subHeadline: '',
+        imageUrl: ''
+    });
+
+    const handleAddClip = () => {
+        const clip: VideoClip = {
+            ...newClip,
+            id: Date.now(),
+            status: 'idle'
+        };
+        setClips([...clips, clip]);
+        setNewClip({ headline: '', subHeadline: '', imageUrl: '' });
+        setIsAdding(false);
+    };
+
+    const handleGenerate = async (id: number) => {
+        const clip = clips.find(c => c.id === id);
+        if (!clip) return;
+
+        setClips(prev => prev.map(c => c.id === id ? { ...c, status: 'processing' } : c));
+
+        try {
+            const prompt = `Cinematic video about: ${clip.headline}. ${clip.subHeadline}. High quality, alumni gathering theme.`;
+            const videoUrl = await generateAlumniVideo(prompt, clip.imageUrl);
+            setClips(prev => prev.map(c => c.id === id ? { ...c, status: 'completed', videoUrl } : c));
+        } catch (error) {
+            setClips(prev => prev.map(c => c.id === id ? { ...c, status: 'error' } : c));
+        }
+    };
+
+    const handleDelete = (id: number) => {
+        setClips(clips.filter(c => c.id !== id));
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800">Alumni Video Studio</h2>
+                <button 
+                    onClick={() => setIsAdding(true)}
+                    className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 flex items-center gap-2"
+                >
+                    <VideoIcon className="h-5 w-5" />
+                    Tambah Video Baru
+                </button>
+            </div>
+
+            {isAdding && (
+                <div className="bg-brand-blue-50 p-6 rounded-lg border border-brand-blue-200 animate-fade-in">
+                    <h3 className="font-bold mb-4">Buat Project Video Baru</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField 
+                            label="Headline / Judul Video" 
+                            name="headline" 
+                            value={newClip.headline} 
+                            onChange={e => setNewClip({...newClip, headline: e.target.value})}
+                        />
+                        <FormField 
+                            label="URL Gambar Referensi" 
+                            name="imageUrl" 
+                            value={newClip.imageUrl} 
+                            onChange={e => setNewClip({...newClip, imageUrl: e.target.value})}
+                        />
+                        <div className="md:col-span-2">
+                            <FormField 
+                                label="Sub-Headline / Deskripsi" 
+                                name="subHeadline" 
+                                value={newClip.subHeadline} 
+                                onChange={e => setNewClip({...newClip, subHeadline: e.target.value})}
+                                as="textarea"
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                        <button onClick={handleAddClip} className="px-4 py-2 bg-green-600 text-white rounded-md">Simpan ke Daftar</button>
+                        <button onClick={() => setIsAdding(false)} className="px-4 py-2 bg-gray-300 rounded-md">Batal</button>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {clips.map(clip => (
+                    <div key={clip.id} className="bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div className="relative h-48 bg-gray-200">
+                            {clip.videoUrl ? (
+                                <video src={clip.videoUrl} controls className="w-full h-full object-cover" />
+                            ) : (
+                                <img src={clip.imageUrl || 'https://via.placeholder.com/400x225?text=No+Image'} className="w-full h-full object-cover" />
+                            )}
+                            <div className="absolute top-2 right-2 flex gap-2">
+                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                    clip.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                    clip.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                                    clip.status === 'error' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                    {clip.status}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="p-4">
+                            <h4 className="font-bold text-lg truncate">{clip.headline}</h4>
+                            <p className="text-sm text-gray-600 line-clamp-2 mt-1">{clip.subHeadline}</p>
+                            <div className="mt-4 flex justify-between items-center">
+                                <button 
+                                    onClick={() => handleGenerate(clip.id)}
+                                    disabled={clip.status === 'processing' || clip.status === 'completed'}
+                                    className="px-3 py-1.5 bg-brand-blue-600 text-white text-sm rounded-md disabled:bg-gray-400 flex items-center gap-2"
+                                >
+                                    {clip.status === 'processing' ? (
+                                        <>
+                                            <div className="h-4 w-4 border-2 border-white border-t-transparent animate-spin rounded-full"></div>
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <SparklesIcon className="h-4 w-4" />
+                                            Generate Video
+                                        </>
+                                    )}
+                                </button>
+                                <button onClick={() => handleDelete(clip.id)} className="text-red-500 hover:text-red-700 text-sm">Hapus</button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                {clips.length === 0 && !isAdding && (
+                    <div className="md:col-span-2 text-center py-12 border-2 border-dashed rounded-xl text-gray-400">
+                        Belum ada video yang ditambahkan. Klik "Tambah Video Baru" untuk memulai.
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const ManageAlumni: React.FC = () => {
     const [alumni, setAlumni] = useState<Alumni[]>([]);
@@ -702,8 +849,8 @@ const ManageAdmins: React.FC<{currentUser: string}> = ({currentUser}) => {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection, userRole, username }) => {
   const availableSections: AdminSection[] = userRole === 'Admin' 
-    ? ['Alumni', 'Berita', 'Galeri', 'Tentang Kami', 'Donasi', 'Pengaturan Umum', 'Kelola Admin']
-    : ['Berita', 'Galeri'];
+    ? ['Alumni', 'Berita', 'Video Studio', 'Galeri', 'Tentang Kami', 'Donasi', 'Pengaturan Umum', 'Kelola Admin']
+    : ['Berita', 'Video Studio', 'Galeri'];
   
   const [activeSection, setActiveSection] = useState<AdminSection>(
     availableSections.includes(initialSection) ? initialSection : availableSections[0]
@@ -729,6 +876,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection, userRol
         return <ManageAlumni />;
       case 'Berita':
         return <ManageNews />;
+      case 'Video Studio':
+        return <ManageVideoStudio />;
       case 'Galeri':
         return <ManageGallery />;
       case 'Tentang Kami':
@@ -747,6 +896,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialSection, userRol
   const navItems: { section: AdminSection, icon: React.FC<React.SVGProps<SVGSVGElement>> }[] = [
     { section: 'Alumni', icon: UsersIcon },
     { section: 'Berita', icon: NewspaperIcon },
+    { section: 'Video Studio', icon: VideoIcon },
     { section: 'Galeri', icon: PhotographIcon },
     { section: 'Tentang Kami', icon: DocumentTextIcon },
     { section: 'Donasi', icon: GiftIcon },
