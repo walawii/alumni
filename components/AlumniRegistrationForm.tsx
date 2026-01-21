@@ -26,10 +26,11 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-     if (type === 'checkbox' && e.target instanceof HTMLInputElement) {
+     if (type === 'checkbox') {
+        const checked = (e.target as HTMLInputElement).checked;
         setFormData(prevState => ({
             ...prevState,
-            [name]: e.target.checked,
+            [name]: checked,
         }));
     } else {
         setFormData(prevState => ({

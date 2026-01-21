@@ -669,6 +669,17 @@ const ManageSettings: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSettings(prev => prev ? {...prev, [e.target.name]: e.target.value} : null);
     }
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                 setSettings(prev => prev ? {...prev, logoUrl: reader.result as string} : null);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
     
     const handleSocialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSettings(prev => prev ? {
@@ -689,7 +700,33 @@ const ManageSettings: React.FC = () => {
         <form onSubmit={handleSave}>
              <h2 className="text-2xl font-bold mb-6 text-gray-800">Pengaturan Umum Situs</h2>
              <div className="space-y-6">
-                <FormField label="URL Logo" name="logoUrl" value={settings.logoUrl} onChange={handleChange} required/>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Logo Situs</label>
+                    <div className="flex items-center gap-6">
+                        <div className="flex-shrink-0 h-24 w-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative group">
+                            {settings.logoUrl ? (
+                                <img src={settings.logoUrl} alt="Current Logo" className="h-full w-full object-contain" />
+                            ) : (
+                                <span className="text-gray-400 text-xs">No Logo</span>
+                            )}
+                        </div>
+                        <div className="flex-grow">
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handleLogoChange}
+                                className="block w-full text-sm text-slate-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-brand-blue-50 file:text-brand-blue-700
+                                hover:file:bg-brand-blue-100"
+                            />
+                            <p className="mt-2 text-xs text-gray-500">Unggah file gambar (PNG, JPG, SVG) untuk mengganti logo. Gambar akan otomatis diubah ukurannya.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <FormField label="Alamat" name="address" value={settings.address} onChange={handleChange} required/>
                 <FormField label="Email Kontak" name="email" value={settings.email} onChange={handleChange} type="email" required/>
                 <FormField label="Telepon Kontak" name="phone" value={settings.phone} onChange={handleChange} type="tel" required/>
@@ -712,7 +749,7 @@ const AdminUserForm: React.FC<{user: AdminUser, onSave: (user: AdminUser) => Pro
     const [isSaving, setIsSaving] = useState(false);
     const isEditing = !!user.id;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({...formData, [e.target.name]: e.target.value});
     };
 
