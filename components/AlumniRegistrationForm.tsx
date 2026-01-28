@@ -128,7 +128,7 @@ const AlumniRegistrationForm: React.FC<AlumniRegistrationFormProps> = ({ setActi
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Foto Profil</label>
-                        <div className="mt-2 flex items-center gap-x-4">
+                        <div className="mt-2 flex flex-col sm:flex-row items-center gap-4">
                             <img 
                                 src={avatarPreview || 'https://www.gravatar.com/avatar/?d=mp'} 
                                 alt="Avatar Preview" 

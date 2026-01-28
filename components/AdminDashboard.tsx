@@ -91,11 +91,11 @@ const ManageVideoStudio: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Alumni Video Studio</h2>
                 <button 
                     onClick={() => setIsAdding(true)}
-                    className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 flex items-center gap-2"
+                    className="w-full sm:w-auto px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 flex items-center justify-center gap-2"
                 >
                     <VideoIcon className="h-5 w-5" />
                     Tambah Video Baru
@@ -128,9 +128,9 @@ const ManageVideoStudio: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <div className="mt-4 flex gap-2">
-                        <button onClick={handleAddClip} className="px-4 py-2 bg-green-600 text-white rounded-md">Simpan ke Daftar</button>
-                        <button onClick={() => setIsAdding(false)} className="px-4 py-2 bg-gray-300 rounded-md">Batal</button>
+                    <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                        <button onClick={handleAddClip} className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md">Simpan ke Daftar</button>
+                        <button onClick={() => setIsAdding(false)} className="w-full sm:w-auto px-4 py-2 bg-gray-300 rounded-md">Batal</button>
                     </div>
                 </div>
             )}
@@ -157,11 +157,11 @@ const ManageVideoStudio: React.FC = () => {
                         <div className="p-4">
                             <h4 className="font-bold text-lg truncate">{clip.headline}</h4>
                             <p className="text-sm text-gray-600 line-clamp-2 mt-1">{clip.subHeadline}</p>
-                            <div className="mt-4 flex justify-between items-center">
+                            <div className="mt-4 flex justify-between items-center gap-2">
                                 <button 
                                     onClick={() => handleGenerate(clip.id)}
                                     disabled={clip.status === 'processing' || clip.status === 'completed'}
-                                    className="px-3 py-1.5 bg-brand-blue-600 text-white text-sm rounded-md disabled:bg-gray-400 flex items-center gap-2"
+                                    className="flex-1 sm:flex-none px-3 py-1.5 bg-brand-blue-600 text-white text-sm rounded-md disabled:bg-gray-400 flex items-center justify-center gap-2"
                                 >
                                     {clip.status === 'processing' ? (
                                         <>
@@ -171,11 +171,11 @@ const ManageVideoStudio: React.FC = () => {
                                     ) : (
                                         <>
                                             <SparklesIcon className="h-4 w-4" />
-                                            Generate Video
+                                            Generate
                                         </>
                                     )}
                                 </button>
-                                <button onClick={() => handleDelete(clip.id)} className="text-red-500 hover:text-red-700 text-sm">Hapus</button>
+                                <button onClick={() => handleDelete(clip.id)} className="text-red-500 hover:text-red-700 text-sm px-2">Hapus</button>
                             </div>
                         </div>
                     </div>
@@ -334,7 +334,7 @@ const NewsForm: React.FC<{article: NewsArticle, onSave: (article: NewsArticle) =
                         type="button"
                         onClick={handleGenerateStory}
                         disabled={isGenerating || !aiImageFile || !aiPrompt.trim()}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                     >
                         {isGenerating ? (
                             <>
@@ -420,9 +420,9 @@ const ManageNews: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Kelola Berita</h2>
-                <button onClick={() => handleEdit({id: 0, title: '', date: '', excerpt: '', imageUrl: ''})} className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Berita</button>
+                <button onClick={() => handleEdit({id: 0, title: '', date: '', excerpt: '', imageUrl: ''})} className="w-full sm:w-auto px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Berita</button>
             </div>
             <div className="overflow-x-auto bg-white rounded-lg shadow">
                  <table className="min-w-full">
@@ -490,7 +490,7 @@ const ManageGallery: React.FC = () => {
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Kelola Galeri</h2>
             <form onSubmit={handleAddImage} className="mb-6 flex flex-col sm:flex-row gap-4">
                 <input type="url" value={newImageUrl} onChange={e => setNewImageUrl(e.target.value)} placeholder="Masukkan URL gambar baru" className="flex-grow block w-full rounded-md border-gray-300 shadow-sm" required/>
-                <button type="submit" className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah</button>
+                <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah</button>
             </form>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {images.map(image => (
@@ -702,7 +702,7 @@ const ManageSettings: React.FC = () => {
              <div className="space-y-6">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Logo Situs</label>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                         <div className="flex-shrink-0 h-24 w-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center relative group">
                             {settings.logoUrl ? (
                                 <img src={settings.logoUrl} alt="Current Logo" className="h-full w-full object-contain" />
@@ -710,7 +710,7 @@ const ManageSettings: React.FC = () => {
                                 <span className="text-gray-400 text-xs">No Logo</span>
                             )}
                         </div>
-                        <div className="flex-grow">
+                        <div className="w-full sm:w-auto flex-grow">
                             <input 
                                 type="file" 
                                 accept="image/*" 
@@ -852,9 +852,9 @@ const ManageAdmins: React.FC<{currentUser: string}> = ({currentUser}) => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Kelola Admin</h2>
-                <button onClick={() => handleEdit({id: 0, username: '', password: '', role: 'Content Manager'})} className="px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Admin</button>
+                <button onClick={() => handleEdit({id: 0, username: '', password: '', role: 'Content Manager'})} className="w-full sm:w-auto px-4 py-2 bg-brand-blue-600 text-white rounded-md hover:bg-brand-blue-700">Tambah Admin</button>
             </div>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
              <div className="overflow-x-auto bg-white rounded-lg shadow">
